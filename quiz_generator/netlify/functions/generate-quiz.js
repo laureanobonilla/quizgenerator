@@ -11,16 +11,17 @@ exports.handler = async function(event, context) {
 
   try {
     const data = JSON.parse(event.body);
-    const { pdfText, userIdentifier } = data;
+    const { pdfText, userIdentifier, selectedLevel } = data;
 
     if (!pdfText) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Falta el texto del PDF' }) };
     }
 
-    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con 4 cuestionarios de selección única, de 50 preguntas cada uno (Total 200 preguntas). 
-    Los 4 niveles deben ser: "principiante", "intermedio", "avanzado", "experto".
+    const level = selectedLevel || 'intermedio';
+
+    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 25 preguntas para el nivel: "${level}".
     
-    REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por simple lógica o longitud.
+    REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por lógica o longitud.
     
     Texto de referencia:
     """
@@ -29,20 +30,17 @@ exports.handler = async function(event, context) {
 
     El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
     {
-      "principiante": [
+      "nivel": "${level}",
+      "preguntas": [
         {
           "pregunta": "...",
           "opciones": ["A) ...", "B) ...", "C) ...", "D) ..."],
           "respuestaCorrecta": 0,
           "explicacion": "..."
         }
-      ],
-      "intermedio": [...],
-      "avanzado": [...],
-      "experto": [...]
+      ]
     }`;
 
-    // Actualizado al modelo vigente recomendado por la API
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
       contents: prompt,
@@ -60,12 +58,13 @@ exports.handler = async function(event, context) {
       headers: {
         'Content-Type': 'application/json',
         'X-Master-Key': JSONBIN_MASTER_KEY,
-        'X-Bin-Name': `Quiz_${userIdentifier || 'User'}_${Date.now()}`
+        'X-Bin-Name': `Quiz_${level}_${userIdentifier || 'User'}_${Date.now()}`
       },
       body: JSON.stringify({
         createdAt: new Date().toISOString(),
         user: userIdentifier || 'Anónimo',
-        quizzes: quizData
+        nivel: level,
+        quiz: quizData
       })
     });
 
@@ -80,7 +79,7 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({
         success: true,
         binId: jsonBinResult.metadata.id,
-        message: 'Cuestionarios generados y guardados con éxito'
+        message: 'Cuestionario generado y guardado con éxito'
       })
     };
 
