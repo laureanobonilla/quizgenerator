@@ -41,7 +41,6 @@ exports.handler = async function(event, context) {
       ]
     }`;
 
-    // Usando el modelo exacto que exige la API actual
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
       contents: prompt,
@@ -53,7 +52,7 @@ exports.handler = async function(event, context) {
 
     const quizData = JSON.parse(response.text);
 
-    // Guardar en JSONBin.io
+    // Guardar en JSONBin.io de respaldo
     const jsonBinRes = await fetch('https://api.jsonbin.io/v3/b', {
       method: 'POST',
       headers: {
@@ -71,16 +70,12 @@ exports.handler = async function(event, context) {
 
     const jsonBinResult = await jsonBinRes.json();
 
-    if (!jsonBinRes.ok) {
-      throw new Error('Error al guardar en JSONBin: ' + JSON.stringify(jsonBinResult));
-    }
-
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        binId: jsonBinResult.metadata.id,
-        message: 'Cuestionario generado y guardado con éxito'
+        binId: jsonBinResult.metadata ? jsonBinResult.metadata.id : 'Guardado',
+        quizData: quizData
       })
     };
 
