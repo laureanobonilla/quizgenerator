@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Generador de Cuestionarios IA</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <!-- Incluimos PDF.js para leer PDFs pesados directo en el navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -15,7 +14,7 @@
 
   <div class="max-w-xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
     <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Generador Inteligente de Quizzes</h1>
-    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF (incluso si es pesado) para crear 4 niveles (Principiante, Intermedio, Avanzado, Experto) con 50 preguntas cada uno.</p>
+    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF y selecciona el nivel deseado para generar preguntas de alta calidad al instante.</p>
 
     <div id="upload-section" class="space-y-4">
       <div>
@@ -24,12 +23,22 @@
       </div>
 
       <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">Nivel del Cuestionario</label>
+        <select id="quizLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+          <option value="principiante">Principiante (25 preguntas)</option>
+          <option value="intermedio">Intermedio (25 preguntas)</option>
+          <option value="avanzado">Avanzado (25 preguntas)</option>
+          <option value="experto">Experto (25 preguntas)</option>
+        </select>
+      </div>
+
+      <div>
         <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
         <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
       </div>
 
       <button onclick="generateQuiz()" id="btnSubmit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
-        Generar 200 Preguntas con IA
+        Generar Cuestionario con IA
       </button>
     </div>
 
@@ -40,8 +49,8 @@
 
     <div id="success-section" class="hidden text-center py-8 space-y-4">
       <div class="text-green-400 text-5xl">✓</div>
-      <h2 class="text-xl font-bold text-white">¡Cuestionarios creados con éxito!</h2>
-      <p class="text-sm text-slate-300">Los datos se han guardado de manera segura en JSONBin.io.</p>
+      <h2 class="text-xl font-bold text-white">¡Cuestionario creado con éxito!</h2>
+      <p class="text-sm text-slate-300">Guardado de manera segura en JSONBin.io.</p>
       <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-indigo-400 break-all" id="binIdDisplay"></div>
       <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-6 py-2 rounded-lg">Generar otro quiz</button>
     </div>
@@ -65,6 +74,7 @@
 
     async function generateQuiz() {
       const username = document.getElementById('username').value.trim() || 'Usuario';
+      const level = document.getElementById('quizLevel').value;
       const fileInput = document.getElementById('pdfFile');
       
       if (fileInput.files.length === 0) {
@@ -78,18 +88,17 @@
       document.getElementById('loading-section').classList.remove('hidden');
 
       try {
-        // 1. Extraer texto localmente (Adiós límite de 6MB de Netlify)
         const pdfText = await extractTextFromPDF(file);
 
-        document.getElementById('loading-text').innerText = 'Enviando texto a la IA y generando cuestionarios (30-60s)...';
+        document.getElementById('loading-text').innerText = 'Enviando texto a la IA (esto toma unos segundos)...';
 
-        // 2. Enviar solo texto plano a la función
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             pdfText: pdfText,
-            userIdentifier: username
+            userIdentifier: username,
+            selectedLevel: level
           })
         });
 
