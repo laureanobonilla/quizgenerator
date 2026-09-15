@@ -63,8 +63,7 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({
         createdAt: new Date().toISOString(),
         user: userIdentifier || 'Anónimo',
-        nivel: level,
-        quiz: quizData
+        ...quizData
       })
     });
 
