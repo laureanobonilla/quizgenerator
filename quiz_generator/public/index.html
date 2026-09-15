@@ -3,60 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador de Cuestionarios IA</title>
+  <title>Generador y Resolución de Quizzes IA</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
 
-  <div class="max-w-xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
-    <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Generador Inteligente de Quizzes</h1>
-    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF y selecciona el nivel deseado para generar preguntas de alta calidad al instante.</p>
+  <div class="max-w-2xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
+    
+    <!-- SECCIÓN 1: Formulario de Subida -->
+    <div id="upload-section">
+      <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Cuestionario Inteligente por Niveles</h1>
+      <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF, elige tu nivel y resuelve el quiz interactivo generado por IA.</p>
 
-    <div id="upload-section" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
-        <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
+          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Nivel del Cuestionario</label>
+          <select id="quizLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+            <option value="principiante">Principiante (10 preguntas)</option>
+            <option value="intermedio">Intermedio (10 preguntas)</option>
+            <option value="avanzado">Avanzado (10 preguntas)</option>
+            <option value="experto">Experto (10 preguntas)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
+          <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+        </div>
+
+        <button onclick="generateQuiz()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
+          Generar y Resolver Cuestionario
+        </button>
       </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1 text-slate-300">Nivel del Cuestionario</label>
-        <select id="quizLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-          <option value="principiante">Principiante (25 preguntas)</option>
-          <option value="intermedio">Intermedio (25 preguntas)</option>
-          <option value="avanzado">Avanzado (25 preguntas)</option>
-          <option value="experto">Experto (25 preguntas)</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
-        <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
-      </div>
-
-      <button onclick="generateQuiz()" id="btnSubmit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
-        Generar Cuestionario con IA
-      </button>
     </div>
 
+    <!-- SECCIÓN 2: Pantalla de Carga -->
     <div id="loading-section" class="hidden text-center py-10 space-y-4">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
       <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Leyendo el PDF en tu navegador...</p>
     </div>
 
-    <div id="success-section" class="hidden text-center py-8 space-y-4">
-      <div class="text-green-400 text-5xl">✓</div>
-      <h2 class="text-xl font-bold text-white">¡Cuestionario creado con éxito!</h2>
-      <p class="text-sm text-slate-300">Guardado de manera segura en JSONBin.io.</p>
-      <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-indigo-400 break-all" id="binIdDisplay"></div>
-      <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-6 py-2 rounded-lg">Generar otro quiz</button>
+    <!-- SECCIÓN 3: Resolución Interactiva del Quiz -->
+    <div id="quiz-section" class="hidden space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+        <h2 id="quiz-title" class="text-xl font-bold text-indigo-400 capitalize"></h2>
+        <span id="quiz-progress" class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300"></span>
+      </div>
+
+      <div id="question-container" class="space-y-4">
+        <!-- Aquí se inyecta dinámicamente cada pregunta -->
+      </div>
+
+      <div class="flex justify-between pt-4 border-t border-slate-700">
+        <button id="prev-btn" onclick="prevQuestion()" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm">Anterior</button>
+        <button id="next-btn" onclick="nextQuestion()" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium">Siguiente</button>
+      </div>
     </div>
+
+    <!-- SECCIÓN 4: Resultados Finales -->
+    <div id="results-section" class="hidden text-center space-y-6">
+      <h2 class="text-2xl font-bold text-white">¡Cuestionario Finalizado!</h2>
+      <div class="text-5xl font-extrabold text-indigo-400" id="final-score"></div>
+      <p class="text-sm text-slate-300" id="score-message"></p>
+      <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-cyan-400 break-all" id="saved-bin-info"></div>
+      <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-6 py-2 rounded-lg">Intentar con otro PDF</button>
+    </div>
+
   </div>
 
   <script>
+    let currentQuizData = null;
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+
     async function extractTextFromPDF(file) {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -89,8 +117,7 @@
 
       try {
         const pdfText = await extractTextFromPDF(file);
-
-        document.getElementById('loading-text').innerText = 'Enviando texto a la IA (esto toma unos segundos)...';
+        document.getElementById('loading-text').innerText = 'Generando preguntas complejas con IA (esto toma unos segundos)...';
 
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
@@ -108,15 +135,93 @@
           throw new Error(result.error || 'Error desconocido en el servidor');
         }
 
+        // Guardamos los datos para resolverlos interactivamente
+        currentQuizData = result.quizData.quiz;
         document.getElementById('loading-section').classList.add('hidden');
-        document.getElementById('success-section').classList.remove('hidden');
-        document.getElementById('binIdDisplay').innerText = 'Bin ID en JSONBin: ' + result.binId;
+        document.getElementById('quiz-section').classList.remove('hidden');
+        document.getElementById('quiz-title').innerText = `Nivel: ${result.quizData.nivel}`;
+        document.getElementById('saved-bin-info').innerText = 'Guardado en JSONBin ID: ' + result.binId;
+
+        renderQuestion();
 
       } catch (err) {
         alert('Error: ' + err.message);
         document.getElementById('loading-section').classList.add('hidden');
         document.getElementById('upload-section').classList.remove('hidden');
       }
+    }
+
+    function renderQuestion() {
+      const questions = currentQuizData.preguntas;
+      const q = questions[currentQuestionIndex];
+      const container = document.getElementById('question-container');
+      
+      document.getElementById('quiz-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+      
+      document.getElementById('prev-btn').classList.toggle('hidden', currentQuestionIndex === 0);
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.innerText = currentQuestionIndex === questions.length - 1 ? 'Finalizar y Ver Nota' : 'Siguiente';
+
+      let html = `<p class="text-base font-semibold text-white">${currentQuestionIndex + 1}. ${q.pregunta}</p><div class="space-y-2 mt-3">`;
+
+      q.opciones.forEach((opt, idx) => {
+        const isSelected = userAnswers[currentQuestionIndex] === idx;
+        html += `
+          <label class="block bg-slate-900 border ${isSelected ? 'border-indigo-500 bg-indigo-950/40' : 'border-slate-700'} hover:border-slate-500 rounded-lg p-3 text-sm cursor-pointer transition">
+            <input type="radio" name="question-${currentQuestionIndex}" value="${idx}" ${isSelected ? 'checked' : ''} onchange="selectAnswer(${currentQuestionIndex}, ${idx})" class="mr-2 accent-indigo-500">
+            ${opt}
+          </label>`;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function selectAnswer(qIndex, optIndex) {
+      userAnswers[qIndex] = optIndex;
+    }
+
+    function nextQuestion() {
+      if (userAnswers[currentQuestionIndex] === undefined) {
+        alert('Por favor selecciona una opción antes de continuar.');
+        return;
+      }
+
+      if (currentQuestionIndex < currentQuizData.preguntas.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      }
+    }
+
+    function showResults() {
+      const questions = currentQuizData.preguntas;
+      let score = 0;
+
+      questions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.respuestaCorrecta) {
+          score++;
+        }
+      });
+
+      document.getElementById('quiz-section').classList.add('hidden');
+      document.getElementById('results-section').classList.remove('hidden');
+
+      const percentage = (score / questions.length) * 100;
+      document.getElementById('final-score').innerText = `${score} / ${questions.length} (${percentage}%)`;
+      
+      let msg = '¡Excelente dominio del tema!';
+      if (percentage < 60) msg = 'Necesitas repasar un poco más el documento.';
+      else if (percentage < 80) msg = '¡Muy buen trabajo!';
+      document.getElementById('score-message').innerText = msg;
     }
   </script>
 
