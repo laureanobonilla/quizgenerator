@@ -42,8 +42,9 @@ exports.handler = async function(event, context) {
       "experto": [...]
     }`;
 
+    // Actualizado al modelo vigente recomendado por la API
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
