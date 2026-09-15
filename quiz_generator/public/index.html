@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cuestionario Inteligente Avanzado</title>
+  <title>Cuestionario Inteligente por Tema o PDF</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -20,10 +20,12 @@
       
       <div class="space-y-4 bg-slate-900 p-6 rounded-xl border border-slate-700">
         <h2 class="text-lg font-semibold text-white">Generar Nuevo Cuestionario</h2>
+        
         <div>
           <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
           <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
         </div>
+
         <div>
           <label class="block text-sm font-medium mb-1 text-slate-300">Nivel</label>
           <select id="quizLevel" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
@@ -33,11 +35,28 @@
             <option value="experto">Experto (5 preguntas)</option>
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF</label>
-          <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+
+        <!-- Selector de Modo: Tema o PDF -->
+        <div class="space-y-3 pt-2 border-t border-slate-800">
+          <label class="block text-sm font-medium text-slate-300">¿Cómo deseas generar el quiz?</label>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="switchMode('topic')" id="btn-mode-topic" class="py-2 px-3 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">Escribir un Tema</button>
+            <button type="button" onclick="switchMode('pdf')" id="btn-mode-pdf" class="py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition">Subir un PDF</button>
+          </div>
+
+          <!-- Input para Tema -->
+          <div id="input-topic-container" class="mt-3">
+            <input type="text" id="quizTopic" placeholder="Ej: Programación orientada a objetos en C#, Foucault, etc." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Input para PDF -->
+          <div id="input-pdf-container" class="mt-3 hidden">
+            <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+          </div>
         </div>
-        <button onclick="generateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg">Crear y Resolver</button>
+
+        <button onclick="generateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg mt-4">Crear y Resolver</button>
       </div>
 
       <div class="space-y-3">
@@ -48,10 +67,10 @@
     <!-- CARGA -->
     <div id="loading-section" class="hidden text-center py-10 space-y-4">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
-      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Procesando...</p>
+      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Generando cuestionario con IA...</p>
     </div>
 
-    <!-- LISTA DE HISTORIAL DE QUIZZES -->
+    <!-- LISTA DE HISTORIAL -->
     <div id="history-section" class="hidden space-y-4">
       <h2 class="text-xl font-bold text-indigo-400">Tus Quizzes Guardados</h2>
       <div id="quizzes-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
@@ -85,10 +104,31 @@
   </div>
 
   <script>
+    let currentMode = 'topic'; // 'topic' o 'pdf'
     let currentQuizData = null;
     let currentQuestionIndex = 0;
     let userAnswers = {};
     let answerResults = [];
+
+    function switchMode(mode) {
+      currentMode = mode;
+      const btnTopic = document.getElementById('btn-mode-topic');
+      const btnPdf = document.getElementById('btn-mode-pdf');
+      const containerTopic = document.getElementById('input-topic-container');
+      const containerPdf = document.getElementById('input-pdf-container');
+
+      if (mode === 'topic') {
+        btnTopic.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition';
+        btnPdf.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition';
+        containerTopic.classList.remove('hidden');
+        containerPdf.classList.add('hidden');
+      } else {
+        btnPdf.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition';
+        btnTopic.className = 'py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 transition';
+        containerPdf.classList.remove('hidden');
+        containerTopic.classList.add('hidden');
+      }
+    }
 
     function goHome() {
       document.getElementById('home-section').classList.remove('hidden');
@@ -106,7 +146,7 @@
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let fullText = '';
       for (let i = 1; i <= pdf.numPages; i++) {
-        document.getElementById('loading-text').innerText = `Extrayendo texto: Página ${i} de ${pdf.numPages}...`;
+        document.getElementById('loading-text').innerText = `Extrayendo texto del PDF: Página ${i} de ${pdf.numPages}...`;
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         fullText += textContent.items.map(item => item.str).join(' ') + '\n';
@@ -117,24 +157,37 @@
     async function generateQuiz() {
       const username = document.getElementById('username').value.trim() || 'Usuario';
       const level = document.getElementById('quizLevel').value;
-      const fileInput = document.getElementById('pdfFile');
       
-      if (fileInput.files.length === 0) {
-        alert('Selecciona un PDF.');
-        return;
+      let payload = { userIdentifier: username, selectedLevel: level };
+
+      if (currentMode === 'topic') {
+        const topic = document.getElementById('quizTopic').value.trim();
+        if (!topic) {
+          alert('Por favor escribe un tema.');
+          return;
+        }
+        payload.topic = topic;
+      } else {
+        const fileInput = document.getElementById('pdfFile');
+        if (fileInput.files.length === 0) {
+          alert('Por favor selecciona un archivo PDF.');
+          return;
+        }
+        document.getElementById('home-section').classList.add('hidden');
+        document.getElementById('loading-section').classList.remove('hidden');
+        const pdfText = await extractTextFromPDF(fileInput.files[0]);
+        payload.pdfText = pdfText;
       }
 
       document.getElementById('home-section').classList.add('hidden');
       document.getElementById('loading-section').classList.remove('hidden');
+      document.getElementById('loading-text').innerText = 'Generando preguntas con IA y ampliación de conocimiento...';
 
       try {
-        const pdfText = await extractTextFromPDF(fileInput.files[0]);
-        document.getElementById('loading-text').innerText = 'Generando preguntas con distractores e IA...';
-
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdfText, userIdentifier: username, selectedLevel: level, action: 'generate' })
+          body: JSON.stringify(payload)
         });
 
         const result = await response.json();
@@ -191,11 +244,9 @@
       userAnswers[currentQuestionIndex] = selectedIdx;
       answerResults.push({ pregunta: q.pregunta, acerto: isCorrect, seleccionada: q.opciones[selectedIdx], correcta: q.opciones[q.respuestaCorrecta] });
 
-      // Desactivar opciones
       const radios = document.querySelectorAll('input[name="current-option"]');
       radios.forEach(r => r.disabled = true);
 
-      // Mostrar feedback con ampliación de conocimiento
       const feedback = document.getElementById('feedback-container');
       feedback.classList.remove('hidden');
       feedback.className = `p-4 rounded-xl text-sm border ${isCorrect ? 'bg-green-950/40 border-green-700 text-green-200' : 'bg-red-950/40 border-red-700 text-red-200'}`;
@@ -265,7 +316,7 @@
         }
 
         let html = '';
-        result.quizzes.forEach((item, idx) => {
+        result.quizzes.forEach((item) => {
           html += `
             <div class="bg-slate-900 border border-slate-700 p-3 rounded-lg flex justify-between items-center text-sm">
               <div>
