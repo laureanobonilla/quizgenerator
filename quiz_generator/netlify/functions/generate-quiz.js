@@ -19,13 +19,13 @@ exports.handler = async function(event, context) {
 
     const level = selectedLevel || 'intermedio';
 
-    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 25 preguntas para el nivel: "${level}".
+    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 10 preguntas para el nivel: "${level}".
     
     REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por lógica o longitud.
     
     Texto de referencia:
     """
-    ${pdfText.substring(0, 80000)}
+    ${pdfText.substring(0, 60000)}
     """
 
     El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
@@ -41,9 +41,8 @@ exports.handler = async function(event, context) {
       ]
     }`;
 
-    // Usamos el modelo estable actual de la familia Flash
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
