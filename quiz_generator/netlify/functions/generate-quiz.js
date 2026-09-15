@@ -25,7 +25,7 @@ exports.handler = async function(event, context) {
     
     Texto de referencia:
     """
-    ${pdfText.substring(0, 100000)}
+    ${pdfText.substring(0, 80000)}
     """
 
     El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
@@ -41,14 +41,29 @@ exports.handler = async function(event, context) {
       ]
     }`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        temperature: 0.3
-      }
-    });
+    // Intentamos con gemini-3.6-flash, y si hay alta demanda, reintentamos o alternamos
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.3
+        }
+      });
+    } catch (err) {
+      console.warn('Fallo el modelo primario, intentando alternativa...', err);
+      // Fallback a modelo base o reintento inmediato
+      response = await ai.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.3
+        }
+      });
+    }
 
     const quizData = JSON.parse(response.text);
 
