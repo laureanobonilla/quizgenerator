@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Cuestionarios IA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6">
+
+  <div class="max-w-xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
+    <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Generador Inteligente de Quizzes</h1>
+    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF para crear 4 niveles (Principiante, Intermedio, Avanzado, Experto) con 50 preguntas cada uno.</p>
+
+    <div id="upload-section" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
+        <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
+        <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+      </div>
+
+      <button onclick="generateQuiz()" id="btnSubmit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
+        Generar 200 Preguntas con IA
+      </button>
+    </div>
+
+    <div id="loading-section" class="hidden text-center py-10 space-y-4">
+      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+      <p class="text-indigo-300 font-medium animate-pulse">Analizando PDF y construyendo los 4 niveles de dificultad (esto puede tomar 30-60 segundos)...</p>
+    </div>
+
+    <div id="success-section" class="hidden text-center py-8 space-y-4">
+      <div class="text-green-400 text-5xl">✓</div>
+      <h2 class="text-xl font-bold text-white">¡Cuestionarios creados con éxito!</h2>
+      <p class="text-sm text-slate-300">Los datos se han guardado de manera segura en JSONBin.io.</p>
+      <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-indigo-400 break-all" id="binIdDisplay"></div>
+      <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-6 py-2 rounded-lg">Generar otro quiz</button>
+    </div>
+  </div>
+
+  <script>
+    async function generateQuiz() {
+      const username = document.getElementById('username').value.trim() || 'Usuario';
+      const fileInput = document.getElementById('pdfFile');
+      
+      if (fileInput.files.length === 0) {
+        alert('Por favor selecciona un archivo PDF.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      
+      // Toggle views
+      document.getElementById('upload-section').classList.add('hidden');
+      document.getElementById('loading-section').classList.remove('hidden');
+
+      try {
+        const base64PDF = await toBase64(file);
+        
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pdfBase64: base64PDF.split(',')[1],
+            userIdentifier: username
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Error desconocido en el servidor');
+        }
+
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('success-section').classList.remove('hidden');
+        document.getElementById('binIdDisplay').innerText = 'Bin ID en JSONBin: ' + result.binId;
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('upload-section').classList.remove('hidden');
+      }
+    }
+
+    const toBase64 = file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  </script>
+
+</body>
+</html>
