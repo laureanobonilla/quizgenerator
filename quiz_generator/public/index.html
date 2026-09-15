@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cuestionario Interactivo IA</title>
+  <title>Cuestionario Inteligente Avanzado</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -14,66 +14,72 @@
 
   <div class="max-w-2xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
     
-    <!-- SECCIÓN 1: Formulario -->
-    <div id="upload-section">
-      <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Cuestionario Inteligente por Niveles</h1>
-      <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF, elige tu nivel y resuelve el quiz interactivo generado por IA.</p>
-
-      <div class="space-y-4">
+    <!-- MENÚ PRINCIPAL -->
+    <div id="home-section" class="space-y-6">
+      <h1 class="text-2xl font-bold text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Plataforma de Quizzes IA</h1>
+      
+      <div class="space-y-4 bg-slate-900 p-6 rounded-xl border border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Generar Nuevo Cuestionario</h2>
         <div>
           <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
-          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
         </div>
-
         <div>
-          <label class="block text-sm font-medium mb-1 text-slate-300">Nivel del Cuestionario</label>
-          <select id="quizLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
-            <option value="principiante">Principiante (10 preguntas)</option>
-            <option value="intermedio">Intermedio (10 preguntas)</option>
-            <option value="avanzado">Avanzado (10 preguntas)</option>
-            <option value="experto">Experto (10 preguntas)</option>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Nivel</label>
+          <select id="quizLevel" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+            <option value="principiante">Principiante (5 preguntas)</option>
+            <option value="intermedio">Intermedio (5 preguntas)</option>
+            <option value="avanzado">Avanzado (5 preguntas)</option>
+            <option value="experto">Experto (5 preguntas)</option>
           </select>
         </div>
-
         <div>
-          <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF</label>
           <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
         </div>
+        <button onclick="generateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-lg">Crear y Resolver</button>
+      </div>
 
-        <button onclick="generateQuiz()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
-          Generar y Resolver Cuestionario
-        </button>
+      <div class="space-y-3">
+        <button onclick="loadUserQuizzes()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-lg text-sm transition">Ver mi Historial de Quizzes Guardados</button>
       </div>
     </div>
 
-    <!-- SECCIÓN 2: Carga -->
+    <!-- CARGA -->
     <div id="loading-section" class="hidden text-center py-10 space-y-4">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
-      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Leyendo el PDF en tu navegador...</p>
+      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Procesando...</p>
     </div>
 
-    <!-- SECCIÓN 3: Quiz Interactivo -->
+    <!-- LISTA DE HISTORIAL DE QUIZZES -->
+    <div id="history-section" class="hidden space-y-4">
+      <h2 class="text-xl font-bold text-indigo-400">Tus Quizzes Guardados</h2>
+      <div id="quizzes-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+      <button onclick="goHome()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm">Volver</button>
+    </div>
+
+    <!-- RESOLUCIÓN INTERACTIVA -->
     <div id="quiz-section" class="hidden space-y-6">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-4">
-        <h2 id="quiz-title" class="text-xl font-bold text-indigo-400 capitalize"></h2>
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h2 id="quiz-title" class="text-lg font-bold text-indigo-400 capitalize"></h2>
         <span id="quiz-progress" class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300"></span>
       </div>
 
       <div id="question-container" class="space-y-4"></div>
+      <div id="feedback-container" class="hidden p-4 rounded-xl text-sm border"></div>
 
       <div class="flex justify-between pt-4 border-t border-slate-700">
-        <button id="prev-btn" onclick="prevQuestion()" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm">Anterior</button>
-        <button id="next-btn" onclick="nextQuestion()" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium">Siguiente</button>
+        <button id="next-btn" onclick="nextQuestion()" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium">Siguiente Pregunta</button>
       </div>
     </div>
 
-    <!-- SECCIÓN 4: Resultados -->
+    <!-- RESULTADOS FINALES -->
     <div id="results-section" class="hidden text-center space-y-6">
-      <h2 class="text-2xl font-bold text-white">¡Cuestionario Finalizado!</h2>
+      <h2 class="text-2xl font-bold text-white">¡Resultados Finales!</h2>
       <div class="text-5xl font-extrabold text-indigo-400" id="final-score"></div>
       <p class="text-sm text-slate-300" id="score-message"></p>
-      <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-cyan-400 break-all" id="saved-bin-info"></div>
-      <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-6 py-2 rounded-lg">Intentar con otro PDF</button>
+      <div id="user-stats" class="bg-slate-900 p-4 rounded-xl text-xs font-mono text-left space-y-1"></div>
+      <button onclick="goHome()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2.5 rounded-lg">Menú Principal</button>
     </div>
 
   </div>
@@ -82,18 +88,28 @@
     let currentQuizData = null;
     let currentQuestionIndex = 0;
     let userAnswers = {};
+    let answerResults = [];
+
+    function goHome() {
+      document.getElementById('home-section').classList.remove('hidden');
+      document.getElementById('loading-section').classList.add('hidden');
+      document.getElementById('history-section').classList.add('hidden');
+      document.getElementById('quiz-section').classList.add('hidden');
+      document.getElementById('results-section').classList.add('hidden');
+      currentQuestionIndex = 0;
+      userAnswers = {};
+      answerResults = [];
+    }
 
     async function extractTextFromPDF(file) {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let fullText = '';
-
       for (let i = 1; i <= pdf.numPages; i++) {
         document.getElementById('loading-text').innerText = `Extrayendo texto: Página ${i} de ${pdf.numPages}...`;
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        fullText += pageText + '\n';
+        fullText += textContent.items.map(item => item.str).join(' ') + '\n';
       }
       return fullText;
     }
@@ -104,68 +120,62 @@
       const fileInput = document.getElementById('pdfFile');
       
       if (fileInput.files.length === 0) {
-        alert('Por favor selecciona un archivo PDF.');
+        alert('Selecciona un PDF.');
         return;
       }
 
-      const file = fileInput.files[0];
-      
-      document.getElementById('upload-section').classList.add('hidden');
+      document.getElementById('home-section').classList.add('hidden');
       document.getElementById('loading-section').classList.remove('hidden');
 
       try {
-        const pdfText = await extractTextFromPDF(file);
-        document.getElementById('loading-text').innerText = 'Generando preguntas con IA (esto toma unos segundos)...';
+        const pdfText = await extractTextFromPDF(fileInput.files[0]);
+        document.getElementById('loading-text').innerText = 'Generando preguntas con distractores e IA...';
 
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pdfText: pdfText,
-            userIdentifier: username,
-            selectedLevel: level
-          })
+          body: JSON.stringify({ pdfText, userIdentifier: username, selectedLevel: level, action: 'generate' })
         });
 
         const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Error desconocido en el servidor');
-        }
-
-        currentQuizData = result.quizData;
-        document.getElementById('loading-section').classList.add('hidden');
-        document.getElementById('quiz-section').classList.remove('hidden');
-        document.getElementById('quiz-title').innerText = `Nivel: ${currentQuizData.nivel}`;
-        document.getElementById('saved-bin-info').innerText = 'Guardado en JSONBin ID: ' + result.binId;
-
-        renderQuestion();
-
+        startQuiz(result.quizData);
       } catch (err) {
         alert('Error: ' + err.message);
-        document.getElementById('loading-section').classList.add('hidden');
-        document.getElementById('upload-section').classList.remove('hidden');
+        goHome();
       }
     }
 
+    function startQuiz(quizData) {
+      currentQuizData = quizData;
+      currentQuestionIndex = 0;
+      userAnswers = {};
+      answerResults = [];
+
+      document.getElementById('loading-section').classList.add('hidden');
+      document.getElementById('quiz-section').classList.remove('hidden');
+      document.getElementById('quiz-title').innerText = `Nivel: ${currentQuizData.nivel}`;
+      renderQuestion();
+    }
+
     function renderQuestion() {
-      const questions = currentQuizData.preguntas;
-      const q = questions[currentQuestionIndex];
+      const q = currentQuizData.preguntas[currentQuestionIndex];
       const container = document.getElementById('question-container');
       
-      document.getElementById('quiz-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+      document.getElementById('quiz-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${currentQuizData.preguntas.length}`;
+      document.getElementById('feedback-container').classList.add('hidden');
       
-      document.getElementById('prev-btn').classList.toggle('hidden', currentQuestionIndex === 0);
       const nextBtn = document.getElementById('next-btn');
-      nextBtn.innerText = currentQuestionIndex === questions.length - 1 ? 'Finalizar y Ver Nota' : 'Siguiente';
+      nextBtn.innerText = currentQuestionIndex === currentQuizData.preguntas.length - 1 ? 'Finalizar' : 'Siguiente';
+      nextBtn.disabled = false;
 
-      let html = `<p class="text-base font-semibold text-white">${currentQuestionIndex + 1}. ${q.pregunta}</p><div class="space-y-2 mt-3">`;
+      let html = `<p class="text-sm font-semibold text-white">${currentQuestionIndex + 1}. ${q.pregunta}</p><div class="space-y-2 mt-3">`;
 
       q.opciones.forEach((opt, idx) => {
-        const isSelected = userAnswers[currentQuestionIndex] === idx;
         html += `
-          <label class="block bg-slate-900 border ${isSelected ? 'border-indigo-500 bg-indigo-950/40' : 'border-slate-700'} hover:border-slate-500 rounded-lg p-3 text-sm cursor-pointer transition">
-            <input type="radio" name="question-${currentQuestionIndex}" value="${idx}" ${isSelected ? 'checked' : ''} onchange="selectAnswer(${currentQuestionIndex}, ${idx})" class="mr-2 accent-indigo-500">
+          <label class="block bg-slate-900 border border-slate-700 hover:border-slate-500 rounded-lg p-3 text-sm cursor-pointer transition">
+            <input type="radio" name="current-option" value="${idx}" class="mr-2 accent-indigo-500" onclick="submitAnswer(${idx})">
             ${opt}
           </label>`;
       });
@@ -174,13 +184,33 @@
       container.innerHTML = html;
     }
 
-    function selectAnswer(qIndex, optIndex) {
-      userAnswers[qIndex] = optIndex;
+    function submitAnswer(selectedIdx) {
+      const q = currentQuizData.preguntas[currentQuestionIndex];
+      const isCorrect = selectedIdx === q.respuestaCorrecta;
+      
+      userAnswers[currentQuestionIndex] = selectedIdx;
+      answerResults.push({ pregunta: q.pregunta, acerto: isCorrect, seleccionada: q.opciones[selectedIdx], correcta: q.opciones[q.respuestaCorrecta] });
+
+      // Desactivar opciones
+      const radios = document.querySelectorAll('input[name="current-option"]');
+      radios.forEach(r => r.disabled = true);
+
+      // Mostrar feedback con ampliación de conocimiento
+      const feedback = document.getElementById('feedback-container');
+      feedback.classList.remove('hidden');
+      feedback.className = `p-4 rounded-xl text-sm border ${isCorrect ? 'bg-green-950/40 border-green-700 text-green-200' : 'bg-red-950/40 border-red-700 text-red-200'}`;
+      
+      feedback.innerHTML = `
+        <p class="font-bold mb-1">${isCorrect ? '¡Correcto! Acertaste.' : 'Incorrecto.'}</p>
+        <p class="mb-2"><strong>Respuesta correcta:</strong> ${q.opciones[q.respuestaCorrecta]}</p>
+        <p class="mb-2 text-slate-300"><strong>Explicación:</strong> ${q.explicacion}</p>
+        <p class="text-cyan-300 text-xs mt-2 border-t border-slate-700 pt-2"><strong>Ampliación de conocimiento:</strong> ${q.ampliacionConocimiento}</p>
+      `;
     }
 
     function nextQuestion() {
       if (userAnswers[currentQuestionIndex] === undefined) {
-        alert('Por favor selecciona una opción antes de continuar.');
+        alert('Selecciona una opción primero.');
         return;
       }
 
@@ -192,33 +222,64 @@
       }
     }
 
-    function prevQuestion() {
-      if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        renderQuestion();
-      }
-    }
-
     function showResults() {
-      const questions = currentQuizData.preguntas;
-      let score = 0;
-
-      questions.forEach((q, idx) => {
-        if (userAnswers[idx] === q.respuestaCorrecta) {
-          score++;
-        }
-      });
-
       document.getElementById('quiz-section').classList.add('hidden');
       document.getElementById('results-section').classList.remove('hidden');
 
-      const percentage = (score / questions.length) * 100;
-      document.getElementById('final-score').innerText = `${score} / ${questions.length} (${percentage}%)`;
-      
-      let msg = '¡Excelente dominio del tema!';
-      if (percentage < 60) msg = 'Necesitas repasar un poco más el documento.';
-      else if (percentage < 80) msg = '¡Muy buen trabajo!';
-      document.getElementById('score-message').innerText = msg;
+      const correctCount = answerResults.filter(r => r.acerto).length;
+      const total = currentQuizData.preguntas.length;
+      const percentage = (correctCount / total) * 100;
+
+      document.getElementById('final-score').innerText = `${correctCount} / ${total} (${percentage}%)`;
+      document.getElementById('score-message').innerText = percentage >= 70 ? '¡Gran desempeño!' : 'Puedes repasar más el material.';
+
+      let statsHtml = `<p class="text-white font-bold mb-2">Registro de tus respuestas:</p>`;
+      answerResults.forEach((res, i) => {
+        statsHtml += `<p class="${res.acerto ? 'text-green-400' : 'text-red-400'}">${i+1}. ${res.acerto ? '✓ Acertó' : '✗ Falló'}</p>`;
+      });
+      document.getElementById('user-stats').innerHTML = statsHtml;
+    }
+
+    async function loadUserQuizzes() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) {
+        alert('Escribe tu nombre o identificador primero para buscar tus quizzes.');
+        return;
+      }
+
+      document.getElementById('home-section').classList.add('hidden');
+      document.getElementById('loading-section').classList.remove('hidden');
+      document.getElementById('loading-text').innerText = 'Buscando tus quizzes en JSONBin...';
+
+      try {
+        const response = await fetch(`/.netlify/functions/generate-quiz?user=${encodeURIComponent(username)}`, { method: 'GET' });
+        const result = await response.json();
+        
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('history-section').classList.remove('hidden');
+
+        const listContainer = document.getElementById('quizzes-list');
+        if (!result.quizzes || result.quizzes.length === 0) {
+          listContainer.innerHTML = '<p class="text-slate-400 text-sm">No se encontraron quizzes guardados para este usuario.</p>';
+          return;
+        }
+
+        let html = '';
+        result.quizzes.forEach((item, idx) => {
+          html += `
+            <div class="bg-slate-900 border border-slate-700 p-3 rounded-lg flex justify-between items-center text-sm">
+              <div>
+                <p class="font-bold text-indigo-300 capitalize">Nivel: ${item.quiz.nivel}</p>
+                <p class="text-xs text-slate-400">Creado: ${new Date(item.createdAt).toLocaleString()}</p>
+              </div>
+              <button onclick='startQuiz(${JSON.stringify(item.quiz)})' class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs">Repetir Quiz</button>
+            </div>`;
+        });
+        listContainer.innerHTML = html;
+      } catch (err) {
+        alert('Error al cargar historial: ' + err.message);
+        goHome();
+      }
     }
   </script>
 
