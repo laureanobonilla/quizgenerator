@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador y Resolución de Quizzes IA</title>
+  <title>Cuestionario Interactivo IA</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -14,7 +14,7 @@
 
   <div class="max-w-2xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
     
-    <!-- SECCIÓN 1: Formulario de Subida -->
+    <!-- SECCIÓN 1: Formulario -->
     <div id="upload-section">
       <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Cuestionario Inteligente por Niveles</h1>
       <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF, elige tu nivel y resuelve el quiz interactivo generado por IA.</p>
@@ -46,22 +46,20 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 2: Pantalla de Carga -->
+    <!-- SECCIÓN 2: Carga -->
     <div id="loading-section" class="hidden text-center py-10 space-y-4">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
       <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Leyendo el PDF en tu navegador...</p>
     </div>
 
-    <!-- SECCIÓN 3: Resolución Interactiva del Quiz -->
+    <!-- SECCIÓN 3: Quiz Interactivo -->
     <div id="quiz-section" class="hidden space-y-6">
       <div class="flex justify-between items-center border-b border-slate-700 pb-4">
         <h2 id="quiz-title" class="text-xl font-bold text-indigo-400 capitalize"></h2>
         <span id="quiz-progress" class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300"></span>
       </div>
 
-      <div id="question-container" class="space-y-4">
-        <!-- Aquí se inyecta dinámicamente cada pregunta -->
-      </div>
+      <div id="question-container" class="space-y-4"></div>
 
       <div class="flex justify-between pt-4 border-t border-slate-700">
         <button id="prev-btn" onclick="prevQuestion()" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm">Anterior</button>
@@ -69,7 +67,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 4: Resultados Finales -->
+    <!-- SECCIÓN 4: Resultados -->
     <div id="results-section" class="hidden text-center space-y-6">
       <h2 class="text-2xl font-bold text-white">¡Cuestionario Finalizado!</h2>
       <div class="text-5xl font-extrabold text-indigo-400" id="final-score"></div>
@@ -117,7 +115,7 @@
 
       try {
         const pdfText = await extractTextFromPDF(file);
-        document.getElementById('loading-text').innerText = 'Generando preguntas complejas con IA (esto toma unos segundos)...';
+        document.getElementById('loading-text').innerText = 'Generando preguntas con IA (esto toma unos segundos)...';
 
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
@@ -135,11 +133,10 @@
           throw new Error(result.error || 'Error desconocido en el servidor');
         }
 
-        // Guardamos los datos para resolverlos interactivamente
-        currentQuizData = result.quizData.quiz;
+        currentQuizData = result.quizData;
         document.getElementById('loading-section').classList.add('hidden');
         document.getElementById('quiz-section').classList.remove('hidden');
-        document.getElementById('quiz-title').innerText = `Nivel: ${result.quizData.nivel}`;
+        document.getElementById('quiz-title').innerText = `Nivel: ${currentQuizData.nivel}`;
         document.getElementById('saved-bin-info').innerText = 'Guardado en JSONBin ID: ' + result.binId;
 
         renderQuestion();
