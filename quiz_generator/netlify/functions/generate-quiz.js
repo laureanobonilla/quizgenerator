@@ -5,19 +5,16 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
 
 exports.handler = async function(event, context) {
-  // Manejar consulta de historial por GET
   if (event.httpMethod === 'GET') {
     const user = event.queryStringParameters.user;
     if (!user) return { statusCode: 400, body: JSON.stringify({ error: 'Falta usuario' }) };
 
     try {
-      // Listar bins públicos/privados de JSONBin
       const res = await fetch('https://api.jsonbin.io/v3/b', {
         headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
       });
       const bins = await res.json();
       
-      // Filtrar los bins del usuario actual
       const userBins = [];
       if (Array.isArray(bins)) {
         for (const b of bins) {
@@ -45,19 +42,26 @@ exports.handler = async function(event, context) {
 
   try {
     const data = JSON.parse(event.body);
-    const { pdfText, userIdentifier, selectedLevel } = data;
+    const { pdfText, topic, userIdentifier, selectedLevel } = data;
 
-    if (!pdfText) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Falta el texto del PDF' }) };
+    if (!pdfText && !topic) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Debes proporcionar un tema o un archivo PDF' }) };
     }
 
     const level = selectedLevel || 'intermedio';
-    const optimizedText = pdfText.substring(0, 15000);
 
-    const prompt = `A partir del siguiente extracto de texto, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 5 preguntas para el nivel: "${level}".
+    let promptContent = '';
+    if (topic) {
+      promptContent = `Genera estrictamente un objeto JSON válido con un cuestionario de selección única de 5 preguntas sobre el tema: "${topic}" para el nivel: "${level}".`;
+    } else {
+      const optimizedText = pdfText.substring(0, 15000);
+      promptContent = `A partir del siguiente extracto de texto, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 5 preguntas para el nivel: "${level}".\n\nTexto de referencia:\n"""\n${optimizedText}\n"""`;
+    }
+
+    const fullPrompt = `${promptContent}
     
     REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles. 
-    Además, incluye para cada pregunta un campo llamado "ampliacionConocimiento" que aporte un dato cultural, histórico o científico avanzado relacionado con la respuesta correcta pero que esté FUERA del libro de texto.
+    Además, incluye para cada pregunta un campo llamado "ampliacionConocimiento" que aporte un dato cultural, histórico o científico avanzado relacionado con la respuesta correcta pero que esté más allá de los fundamentos básicos.
     
     El formato JSON de salida debe ser exactamente este:
     {
@@ -75,7 +79,7 @@ exports.handler = async function(event, context) {
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
-      contents: [prompt, optimizedText],
+      contents: fullPrompt,
       config: {
         responseMimeType: 'application/json',
         temperature: 0.3
@@ -84,7 +88,6 @@ exports.handler = async function(event, context) {
 
     const quizData = JSON.parse(response.text);
 
-    // Guardar en JSONBin.io vinculado al usuario
     const recordToSave = {
       createdAt: new Date().toISOString(),
       user: userIdentifier || 'Anónimo',
