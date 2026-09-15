@@ -1,8 +1,34 @@
 const { GoogleGenAI } = require('@google/genai');
 const fetch = require('node-fetch');
+const Busboy = require('busboy');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
+
+// Helper para parsear multipart/form-data en Netlify Functions
+const parseMultipart = (event) => {
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ headers: { 'content-type': event.headers['content-type'] || event.headers['Content-Type'] } });
+    let fileBuffer = [];
+    let fields = {};
+
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      file.on('data', (data) => fileBuffer.push(data));
+      file.on('end', () => {
+        fields.fileData = Buffer.concat(fileBuffer);
+      });
+    });
+
+    busboy.on('field', (fieldname, val) => {
+      fields[fieldname] = val;
+    });
+
+    busboy.on('error', (error) => reject(error));
+    busboy.on('finish', () => resolve(fields));
+
+    busboy.end(Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8'));
+  });
+};
 
 exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
@@ -10,20 +36,16 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const data = JSON.parse(event.body);
-    const { pdfBase64, userIdentifier } = data;
+    const { fileData, userIdentifier } = await parseMultipart(event);
 
-    if (!pdfBase64) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Falta el archivo PDF en base64' }) };
+    if (!fileData) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'No se recibió ningún archivo PDF' }) };
     }
-
-    // Convert base64 back to buffer/part for Gemini
-    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
 
     const prompt = `Analiza el documento PDF adjunto y genera estrictamente un objeto JSON válido con 4 cuestionarios de selección única, de 50 preguntas cada uno (Total 200 preguntas). 
     Los 4 niveles deben ser: "principiante", "intermedio", "avanzado", "experto".
     
-    REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por simple lógica o por longitud de la opción.
+    REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por simple lógica o longitud.
     
     El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
     {
@@ -40,13 +62,12 @@ exports.handler = async function(event, context) {
       "experto": [...]
     }`;
 
-    // Call Gemini 2.5/1.5 Flash with multimodal input
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
         {
           inlineData: {
-            data: pdfBuffer.toString('base64'),
+            data: fileData.toString('base64'),
             mimeType: 'application/pdf'
           }
         },
@@ -60,7 +81,7 @@ exports.handler = async function(event, context) {
 
     const quizData = JSON.parse(response.text);
 
-    // Save to JSONBin.io
+    // Guardar en JSONBin.io
     const jsonBinRes = await fetch('https://api.jsonbin.io/v3/b', {
       method: 'POST',
       headers: {
@@ -91,7 +112,7 @@ exports.handler = async function(event, context) {
     };
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error detallado:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message })
