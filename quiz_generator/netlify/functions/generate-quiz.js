@@ -1,34 +1,8 @@
 const { GoogleGenAI } = require('@google/genai');
 const fetch = require('node-fetch');
-const Busboy = require('busboy');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
-
-// Helper para parsear multipart/form-data en Netlify Functions
-const parseMultipart = (event) => {
-  return new Promise((resolve, reject) => {
-    const busboy = Busboy({ headers: { 'content-type': event.headers['content-type'] || event.headers['Content-Type'] } });
-    let fileBuffer = [];
-    let fields = {};
-
-    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      file.on('data', (data) => fileBuffer.push(data));
-      file.on('end', () => {
-        fields.fileData = Buffer.concat(fileBuffer);
-      });
-    });
-
-    busboy.on('field', (fieldname, val) => {
-      fields[fieldname] = val;
-    });
-
-    busboy.on('error', (error) => reject(error));
-    busboy.on('finish', () => resolve(fields));
-
-    busboy.end(Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8'));
-  });
-};
 
 exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
@@ -36,17 +10,23 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { fileData, userIdentifier } = await parseMultipart(event);
+    const data = JSON.parse(event.body);
+    const { pdfText, userIdentifier } = data;
 
-    if (!fileData) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'No se recibió ningún archivo PDF' }) };
+    if (!pdfText) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Falta el texto del PDF' }) };
     }
 
-    const prompt = `Analiza el documento PDF adjunto y genera estrictamente un objeto JSON válido con 4 cuestionarios de selección única, de 50 preguntas cada uno (Total 200 preguntas). 
+    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con 4 cuestionarios de selección única, de 50 preguntas cada uno (Total 200 preguntas). 
     Los 4 niveles deben ser: "principiante", "intermedio", "avanzado", "experto".
     
     REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por simple lógica o longitud.
     
+    Texto de referencia:
+    """
+    ${pdfText.substring(0, 100000)}
+    """
+
     El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
     {
       "principiante": [
@@ -64,15 +44,7 @@ exports.handler = async function(event, context) {
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        {
-          inlineData: {
-            data: fileData.toString('base64'),
-            mimeType: 'application/pdf'
-          }
-        },
-        prompt
-      ],
+      contents: prompt,
       config: {
         responseMimeType: 'application/json',
         temperature: 0.3
