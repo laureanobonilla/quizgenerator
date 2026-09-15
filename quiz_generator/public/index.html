@@ -5,12 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Generador de Cuestionarios IA</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Incluimos PDF.js para leer PDFs pesados directo en el navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6">
 
   <div class="max-w-xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
     <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Generador Inteligente de Quizzes</h1>
-    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF para crear 4 niveles (Principiante, Intermedio, Avanzado, Experto) con 50 preguntas cada uno.</p>
+    <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF (incluso si es pesado) para crear 4 niveles (Principiante, Intermedio, Avanzado, Experto) con 50 preguntas cada uno.</p>
 
     <div id="upload-section" class="space-y-4">
       <div>
@@ -30,7 +35,7 @@
 
     <div id="loading-section" class="hidden text-center py-10 space-y-4">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
-      <p class="text-indigo-300 font-medium animate-pulse">Analizando PDF y construyendo los 4 niveles de dificultad (esto puede tomar 30-60 segundos)...</p>
+      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Leyendo el PDF en tu navegador...</p>
     </div>
 
     <div id="success-section" class="hidden text-center py-8 space-y-4">
@@ -43,6 +48,21 @@
   </div>
 
   <script>
+    async function extractTextFromPDF(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        document.getElementById('loading-text').innerText = `Extrayendo texto: Página ${i} de ${pdf.numPages}...`;
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      return fullText;
+    }
+
     async function generateQuiz() {
       const username = document.getElementById('username').value.trim() || 'Usuario';
       const fileInput = document.getElementById('pdfFile');
@@ -58,13 +78,19 @@
       document.getElementById('loading-section').classList.remove('hidden');
 
       try {
-        const formData = new FormData();
-        formData.append('pdfFile', file);
-        formData.append('userIdentifier', username);
+        // 1. Extraer texto localmente (Adiós límite de 6MB de Netlify)
+        const pdfText = await extractTextFromPDF(file);
 
+        document.getElementById('loading-text').innerText = 'Enviando texto a la IA y generando cuestionarios (30-60s)...';
+
+        // 2. Enviar solo texto plano a la función
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pdfText: pdfText,
+            userIdentifier: username
+          })
         });
 
         const result = await response.json();
