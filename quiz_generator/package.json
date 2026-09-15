@@ -5,7 +5,6 @@
   "main": "index.js",
   "dependencies": {
     "@google/genai": "^2.22.0",
-    "busboy": "^1.6.0",
     "node-fetch": "^2.7.0"
   },
   "engines": {
