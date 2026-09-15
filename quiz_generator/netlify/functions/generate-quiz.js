@@ -1,88 +1,226 @@
-const { GoogleGenAI } = require('@google/genai');
-const fetch = require('node-fetch');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario Interactivo IA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
+  <div class="max-w-2xl w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
+    
+    <!-- SECCIÓN 1: Formulario -->
+    <div id="upload-section">
+      <h1 class="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Cuestionario Inteligente por Niveles</h1>
+      <p class="text-slate-400 text-sm text-center mb-6">Sube tu PDF, elige tu nivel y resuelve el quiz interactivo generado por IA.</p>
 
-exports.handler = async function(event, context) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Tu Nombre o Identificador</label>
+          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+        </div>
 
-  try {
-    const data = JSON.parse(event.body);
-    const { pdfText, userIdentifier, selectedLevel } = data;
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Nivel del Cuestionario</label>
+          <select id="quizLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+            <option value="principiante">Principiante (10 preguntas)</option>
+            <option value="intermedio">Intermedio (10 preguntas)</option>
+            <option value="avanzado">Avanzado (10 preguntas)</option>
+            <option value="experto">Experto (10 preguntas)</option>
+          </select>
+        </div>
 
-    if (!pdfText) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Falta el texto del PDF' }) };
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-300">Archivo PDF de estudio</label>
+          <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+        </div>
+
+        <button onclick="generateQuiz()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition duration-200 shadow-lg shadow-indigo-600/30">
+          Generar y Resolver Cuestionario
+        </button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Carga -->
+    <div id="loading-section" class="hidden text-center py-10 space-y-4">
+      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+      <p id="loading-text" class="text-indigo-300 font-medium animate-pulse">Leyendo el PDF en tu navegador...</p>
+    </div>
+
+    <!-- SECCIÓN 3: Quiz Interactivo -->
+    <div id="quiz-section" class="hidden space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+        <h2 id="quiz-title" class="text-xl font-bold text-indigo-400 capitalize"></h2>
+        <span id="quiz-progress" class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300"></span>
+      </div>
+
+      <div id="question-container" class="space-y-4"></div>
+
+      <div class="flex justify-between pt-4 border-t border-slate-700">
+        <button id="prev-btn" onclick="prevQuestion()" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm">Anterior</button>
+        <button id="next-btn" onclick="nextQuestion()" class="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: Resultados -->
+    <div id="results-section" class="hidden text-center space-y-6">
+      <h2 class="text-2xl font-bold text-white">¡Cuestionario Finalizado!</h2>
+      <div class="text-5xl font-extrabold text-indigo-400" id="final-score"></div>
+      <p class="text-sm text-slate-300" id="score-message"></p>
+      <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs font-mono text-cyan-400 break-all" id="saved-bin-info"></div>
+      <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-6 py-2 rounded-lg">Intentar con otro PDF</button>
+    </div>
+
+  </div>
+
+  <script>
+    let currentQuizData = null;
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+
+    async function extractTextFromPDF(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        document.getElementById('loading-text').innerText = `Extrayendo texto: Página ${i} de ${pdf.numPages}...`;
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      return fullText;
     }
 
-    const level = selectedLevel || 'intermedio';
-
-    const prompt = `A partir del siguiente texto extraído de un documento, genera estrictamente un objeto JSON válido con un cuestionario de selección única de 10 preguntas para el nivel: "${level}".
-    
-    REQUISITO CRÍTICO DE CALIDAD: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles o confusiones comunes del texto, para que no sea fácil deducir la respuesta correcta por lógica o longitud.
-    
-    Texto de referencia:
-    """
-    ${pdfText.substring(0, 60000)}
-    """
-
-    El formato JSON de salida debe ser exactamente este, sin texto adicional fuera del JSON:
-    {
-      "nivel": "${level}",
-      "preguntas": [
-        {
-          "pregunta": "...",
-          "opciones": ["A) ...", "B) ...", "C) ...", "D) ..."],
-          "respuestaCorrecta": 0,
-          "explicacion": "..."
-        }
-      ]
-    }`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        temperature: 0.3
+    async function generateQuiz() {
+      const username = document.getElementById('username').value.trim() || 'Usuario';
+      const level = document.getElementById('quizLevel').value;
+      const fileInput = document.getElementById('pdfFile');
+      
+      if (fileInput.files.length === 0) {
+        alert('Por favor selecciona un archivo PDF.');
+        return;
       }
-    });
 
-    const quizData = JSON.parse(response.text);
+      const file = fileInput.files[0];
+      
+      document.getElementById('upload-section').classList.add('hidden');
+      document.getElementById('loading-section').classList.remove('hidden');
 
-    // Guardar en JSONBin.io de respaldo
-    const jsonBinRes = await fetch('https://api.jsonbin.io/v3/b', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_MASTER_KEY,
-        'X-Bin-Name': `Quiz_${level}_${userIdentifier || 'User'}_${Date.now()}`
-      },
-      body: JSON.stringify({
-        createdAt: new Date().toISOString(),
-        user: userIdentifier || 'Anónimo',
-        ...quizData
-      })
-    });
+      try {
+        const pdfText = await extractTextFromPDF(file);
+        document.getElementById('loading-text').innerText = 'Generando preguntas con IA (esto toma unos segundos)...';
 
-    const jsonBinResult = await jsonBinRes.json();
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pdfText: pdfText,
+            userIdentifier: username,
+            selectedLevel: level
+          })
+        });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        binId: jsonBinResult.metadata ? jsonBinResult.metadata.id : 'Guardado',
-        quizData: quizData
-      })
-    };
+        const result = await response.json();
 
-  } catch (error) {
-    console.error('Error detallado:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
+        if (!response.ok) {
+          throw new Error(result.error || 'Error desconocido en el servidor');
+        }
+
+        currentQuizData = result.quizData;
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('quiz-section').classList.remove('hidden');
+        document.getElementById('quiz-title').innerText = `Nivel: ${currentQuizData.nivel}`;
+        document.getElementById('saved-bin-info').innerText = 'Guardado en JSONBin ID: ' + result.binId;
+
+        renderQuestion();
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+        document.getElementById('loading-section').classList.add('hidden');
+        document.getElementById('upload-section').classList.remove('hidden');
+      }
+    }
+
+    function renderQuestion() {
+      const questions = currentQuizData.preguntas;
+      const q = questions[currentQuestionIndex];
+      const container = document.getElementById('question-container');
+      
+      document.getElementById('quiz-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+      
+      document.getElementById('prev-btn').classList.toggle('hidden', currentQuestionIndex === 0);
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.innerText = currentQuestionIndex === questions.length - 1 ? 'Finalizar y Ver Nota' : 'Siguiente';
+
+      let html = `<p class="text-base font-semibold text-white">${currentQuestionIndex + 1}. ${q.pregunta}</p><div class="space-y-2 mt-3">`;
+
+      q.opciones.forEach((opt, idx) => {
+        const isSelected = userAnswers[currentQuestionIndex] === idx;
+        html += `
+          <label class="block bg-slate-900 border ${isSelected ? 'border-indigo-500 bg-indigo-950/40' : 'border-slate-700'} hover:border-slate-500 rounded-lg p-3 text-sm cursor-pointer transition">
+            <input type="radio" name="question-${currentQuestionIndex}" value="${idx}" ${isSelected ? 'checked' : ''} onchange="selectAnswer(${currentQuestionIndex}, ${idx})" class="mr-2 accent-indigo-500">
+            ${opt}
+          </label>`;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function selectAnswer(qIndex, optIndex) {
+      userAnswers[qIndex] = optIndex;
+    }
+
+    function nextQuestion() {
+      if (userAnswers[currentQuestionIndex] === undefined) {
+        alert('Por favor selecciona una opción antes de continuar.');
+        return;
+      }
+
+      if (currentQuestionIndex < currentQuizData.preguntas.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      }
+    }
+
+    function showResults() {
+      const questions = currentQuizData.preguntas;
+      let score = 0;
+
+      questions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.respuestaCorrecta) {
+          score++;
+        }
+      });
+
+      document.getElementById('quiz-section').classList.add('hidden');
+      document.getElementById('results-section').classList.remove('hidden');
+
+      const percentage = (score / questions.length) * 100;
+      document.getElementById('final-score').innerText = `${score} / ${questions.length} (${percentage}%)`;
+      
+      let msg = '¡Excelente dominio del tema!';
+      if (percentage < 60) msg = 'Necesitas repasar un poco más el documento.';
+      else if (percentage < 80) msg = '¡Muy buen trabajo!';
+      document.getElementById('score-message').innerText = msg;
+    }
+  </script>
+
+</body>
+</html>
