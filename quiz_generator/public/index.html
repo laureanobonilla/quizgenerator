@@ -54,20 +54,17 @@
 
       const file = fileInput.files[0];
       
-      // Toggle views
       document.getElementById('upload-section').classList.add('hidden');
       document.getElementById('loading-section').classList.remove('hidden');
 
       try {
-        const base64PDF = await toBase64(file);
-        
+        const formData = new FormData();
+        formData.append('pdfFile', file);
+        formData.append('userIdentifier', username);
+
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pdfBase64: base64PDF.split(',')[1],
-            userIdentifier: username
-          })
+          body: formData
         });
 
         const result = await response.json();
@@ -86,13 +83,6 @@
         document.getElementById('upload-section').classList.remove('hidden');
       }
     }
-
-    const toBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
   </script>
 
 </body>
