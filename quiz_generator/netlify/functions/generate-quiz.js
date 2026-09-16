@@ -49,6 +49,8 @@ exports.handler = async function(event, context) {
     }
 
     const level = selectedLevel || 'intermedio';
+    // Factor aleatorio único basado en milisegundos para garantizar que la IA varíe los ángulos y preguntas
+    const randomSeed = Date.now();
 
     let promptContent = '';
     if (topic) {
@@ -59,6 +61,9 @@ exports.handler = async function(event, context) {
     }
 
     const fullPrompt = `${promptContent}
+    
+    INSTRUCCIÓN DE VARIABILIDAD (Seed: ${randomSeed}): 
+    Varía radicalmente el enfoque, los aspectos evaluados y las perspectivas en comparación con evaluaciones convencionales de este mismo tema. Selecciona detalles, matices o conceptos diferentes.
     
     REQUISITO CRÍTICO: Las opciones incorrectas (distractores) deben ser altamente plausibles, basadas en errores conceptuales sutiles. 
     Además, incluye para cada pregunta un campo llamado "ampliacionConocimiento" que aporte un dato cultural, histórico o científico avanzado relacionado con la respuesta correcta pero que esté más allá de los fundamentos básicos.
@@ -82,7 +87,8 @@ exports.handler = async function(event, context) {
       contents: fullPrompt,
       config: {
         responseMimeType: 'application/json',
-        temperature: 0.3
+        // Subimos la temperatura a 0.7 para garantizar creatividad y variedad total de preguntas
+        temperature: 0.7
       }
     });
 
