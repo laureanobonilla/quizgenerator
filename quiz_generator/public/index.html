@@ -3,12 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma de Evaluaciones</title>
+  <title>Centro de Evaluaciones Premium</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/40 via-slate-950 to-slate-950">
 
@@ -18,13 +14,13 @@
     <div id="home-section" class="space-y-6">
       <div class="text-center space-y-2">
         <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">Centro de Evaluaciones</h1>
-        <p class="text-slate-400 text-sm">Diseña tu cuestionario a medida y pon a prueba tus conocimientos</p>
+        <p class="text-slate-400 text-sm">Domina cualquier tema mediante micro-aprendizajes interactivos</p>
       </div>
       
       <div class="space-y-4 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Nombre o Identificador</label>
-          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Correo o Identificador</label>
+          <input type="text" id="username" placeholder="Ej: laureano@email.com" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
         </div>
 
         <div>
@@ -33,49 +29,52 @@
             <option value="principiante">Principiante (5 preguntas)</option>
             <option value="intermedio">Intermedio (5 preguntas)</option>
             <option value="avanzado">Avanzado (5 preguntas)</option>
-            <option value="experto">Experto (5 preguntas)</option>
+            <option value="experto">Experto (Exclusivo Premium) ⭐</option>
           </select>
         </div>
 
-        <!-- Selector de Modo: Tema o PDF -->
-        <div class="space-y-3 pt-2 border-t border-slate-800">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300">Método de Generación</label>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" onclick="switchMode('topic')" id="btn-mode-topic" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition">Escribir un Tema</button>
-            <button type="button" onclick="switchMode('pdf')" id="btn-mode-pdf" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-700/80 transition">Subir un PDF</button>
-          </div>
-
-          <!-- Input para Tema -->
-          <div id="input-topic-container" class="mt-3">
-            <input type="text" id="quizTopic" placeholder="Ej: Revolución Francesa, Programación en C#, etc." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
-          </div>
-
-          <!-- Input para PDF -->
-          <div id="input-pdf-container" class="mt-3 hidden">
-            <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer bg-slate-900 border border-slate-700/80 rounded-xl">
-          </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tema a Evaluar</label>
+          <input type="text" id="quizTopic" placeholder="Ej: Revolución Francesa, Programación en C#, etc." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
         </div>
 
         <button onclick="generateQuiz()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/25 mt-2">Generar Cuestionario</button>
       </div>
 
-      <div class="space-y-3">
-        <button onclick="loadUserQuizzes()" class="w-full bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-semibold py-3 rounded-xl text-sm transition border border-slate-700/60 shadow-md">Ver Historial de Cuestionarios</button>
+      <!-- Banner de Estado / Promoción Premium -->
+      <div class="bg-gradient-to-r from-indigo-950/50 to-purple-950/50 p-4 rounded-2xl border border-indigo-500/30 text-center space-y-2">
+        <p class="text-xs text-indigo-200 font-medium">✨ Tienes <span id="free-credits-counter" class="font-bold text-cyan-300">2</span> evaluaciones gratuitas disponibles hoy.</p>
+        <button onclick="openPaywallModal()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl transition shadow-md">Desbloquear Acceso Ilimitado ($)</button>
+      </div>
+    </div>
+
+    <!-- MODAL PAYWALL / PAYPAL -->
+    <div id="paywall-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div class="bg-slate-900 border border-indigo-500/40 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl text-center">
+        <h3 class="text-xl font-bold text-white">Acceso Premium Ilimitado</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">Obtén evaluaciones ilimitadas, desbloquea el nivel <strong>Experto</strong> y acelera tu aprendizaje sin restricciones.</p>
+        
+        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+          <p class="text-xs text-indigo-300 font-semibold">Paso 1: Realiza tu pago seguro en PayPal</p>
+          <a href="https://www.paypal.com/ncp/payment/YXHVC2M8LAKF4" target="_blank" class="block w-full bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold py-3 rounded-xl text-sm transition shadow-lg">Pagar con PayPal ($)</a>
+        </div>
+
+        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-left">
+          <label class="block text-xs text-slate-300 font-semibold">Paso 2: Activa tu cuenta con tu correo</label>
+          <div class="flex gap-2">
+            <input type="text" id="activation-email" placeholder="Tu correo de pago" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white">
+            <button onclick="activatePremium()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold">Activar</button>
+          </div>
+        </div>
+
+        <button onclick="closePaywallModal()" class="text-xs text-slate-400 hover:text-white underline">Cerrar</button>
       </div>
     </div>
 
     <!-- CARGA -->
     <div id="loading-section" class="hidden text-center py-12 space-y-4">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent shadow-lg shadow-indigo-500/50"></div>
-      <p id="loading-text" class="text-indigo-300 font-medium tracking-wide animate-pulse">Preparando cuestionario...</p>
-    </div>
-
-    <!-- LISTA DE HISTORIAL -->
-    <div id="history-section" class="hidden space-y-4">
-      <h2 class="text-xl font-extrabold text-indigo-400 tracking-tight">Cuestionarios Guardados</h2>
-      <div id="quizzes-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
-      <button onclick="goHome()" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl text-sm font-semibold transition border border-slate-700">Volver al Menú</button>
+      <p id="loading-text" class="text-indigo-300 font-medium tracking-wide animate-pulse">Diseñando evaluación...</p>
     </div>
 
     <!-- RESOLUCIÓN INTERACTIVA -->
@@ -85,16 +84,15 @@
           <h2 id="quiz-title" class="text-base font-extrabold text-indigo-400 capitalize tracking-wide"></h2>
           <span id="quiz-progress" class="text-[11px] text-slate-400 font-medium"></span>
         </div>
-        <button onclick="goHome()" class="text-xs bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 hover:border-rose-800/50 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition font-medium flex items-center gap-1">
-          <span>✕</span> Salir al Menú
-        </button>
+        <button onclick="goHome()" class="text-xs bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition font-medium">Salir</button>
       </div>
 
       <div id="question-container" class="space-y-4"></div>
       <div id="feedback-container" class="hidden p-4 rounded-2xl text-sm border shadow-lg backdrop-blur-sm"></div>
 
       <div class="flex justify-between pt-4 border-t border-slate-800">
-        <button id="next-btn" onclick="nextQuestion()" class="ml-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/25 transition">Siguiente Pregunta</button>
+        <button id="prev-btn" onclick="prevQuestion()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition border border-slate-700">Anterior</button>
+        <button id="next-btn" onclick="nextQuestion()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/25 transition">Siguiente</button>
       </div>
     </div>
 
@@ -113,90 +111,118 @@
   </div>
 
   <script>
-    let currentMode = 'topic';
     let currentQuizData = null;
     let currentQuestionIndex = 0;
     let userAnswers = {};
     let answerResults = [];
 
-    function switchMode(mode) {
-      currentMode = mode;
-      const btnTopic = document.getElementById('btn-mode-topic');
-      const btnPdf = document.getElementById('btn-mode-pdf');
-      const containerTopic = document.getElementById('input-topic-container');
-      const containerPdf = document.getElementById('input-pdf-container');
+    // Sistema Freemium local por créditos diarios
+    function checkAndUseCredit() {
+      const username = document.getElementById('username').value.trim().toLowerCase();
+      if (!username) return true; // Si no puso correo, se maneja individualmente
 
-      if (mode === 'topic') {
-        btnTopic.className = 'py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition';
-        btnPdf.className = 'py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-700/80 transition';
-        containerTopic.classList.remove('hidden');
-        containerPdf.classList.add('hidden');
-      } else {
-        btnPdf.className = 'py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition';
-        btnTopic.className = 'py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 border border-slate-700/80 transition';
-        containerPdf.classList.remove('hidden');
-        containerTopic.classList.add('hidden');
+      // Verificar si es usuario premium guardado en localStorage
+      const premiumUsers = JSON.parse(localStorage.getItem('premium_users') || '[]');
+      if (premiumUsers.includes(username)) return true;
+
+      const today = new Date().toISOString().split('T')[0];
+      const usageKey = `usage_${username}_${today}`;
+      let used = parseInt(localStorage.getItem(usageKey) || '0');
+
+      if (used >= 2) {
+        openPaywallModal();
+        return false;
       }
+
+      localStorage.setItem(usageKey, used + 1);
+      updateCreditsDisplay();
+      return true;
+    }
+
+    function updateCreditsDisplay() {
+      const username = document.getElementById('username').value.trim().toLowerCase();
+      if (!username) return;
+      const premiumUsers = JSON.parse(localStorage.getItem('premium_users') || '[]');
+      if (premiumUsers.includes(username)) {
+        document.getElementById('free-credits-counter').innerText = 'Ilimitadas (Premium ⭐)';
+        return;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const used = parseInt(localStorage.getItem(`usage_${username}_${today}`) || '0');
+      const remaining = Math.max(0, 2 - used);
+      document.getElementById('free-credits-counter').innerText = remaining;
+    }
+
+    function openPaywallModal() {
+      document.getElementById('paywall-modal').classList.remove('hidden');
+    }
+
+    function closePaywallModal() {
+      document.getElementById('paywall-modal').classList.add('hidden');
+    }
+
+    function activatePremium() {
+      const email = document.getElementById('activation-email').value.trim().toLowerCase();
+      if (!email) {
+        alert('Ingresa tu correo');
+        return;
+      }
+      let premiumUsers = JSON.parse(localStorage.getItem('premium_users') || '[]');
+      if (!premiumUsers.includes(email)) {
+        premiumUsers.push(email);
+        localStorage.setItem('premium_users', JSON.stringify(premiumUsers));
+      }
+      alert('¡Cuenta activada con éxito! Disfruta de acceso ilimitado.');
+      closePaywallModal();
+      updateCreditsDisplay();
     }
 
     function goHome() {
       document.getElementById('home-section').classList.remove('hidden');
       document.getElementById('loading-section').classList.add('hidden');
-      document.getElementById('history-section').classList.add('hidden');
       document.getElementById('quiz-section').classList.add('hidden');
       document.getElementById('results-section').classList.add('hidden');
       currentQuestionIndex = 0;
       userAnswers = {};
       answerResults = [];
-    }
-
-    async function extractTextFromPDF(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        document.getElementById('loading-text').innerText = `Analizando documento: Página ${i} de ${pdf.numPages}...`;
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        fullText += textContent.items.map(item => item.str).join(' ') + '\n';
-      }
-      return fullText;
+      updateCreditsDisplay();
     }
 
     async function generateQuiz() {
-      const username = document.getElementById('username').value.trim() || 'Usuario';
+      const username = document.getElementById('username').value.trim();
       const level = document.getElementById('quizLevel').value;
-      
-      let payload = { userIdentifier: username, selectedLevel: level };
+      const topic = document.getElementById('quizTopic').value.trim();
 
-      if (currentMode === 'topic') {
-        const topic = document.getElementById('quizTopic').value.trim();
-        if (!topic) {
-          alert('Por favor escribe un tema.');
-          return;
-        }
-        payload.topic = topic;
-      } else {
-        const fileInput = document.getElementById('pdfFile');
-        if (fileInput.files.length === 0) {
-          alert('Por favor selecciona un archivo PDF.');
-          return;
-        }
-        document.getElementById('home-section').classList.add('hidden');
-        document.getElementById('loading-section').classList.remove('hidden');
-        const pdfText = await extractTextFromPDF(fileInput.files[0]);
-        payload.pdfText = pdfText;
+      if (!username) {
+        alert('Por favor ingresa tu identificador o correo.');
+        return;
       }
+      if (!topic) {
+        alert('Por favor escribe un tema.');
+        return;
+      }
+
+      // Validar nivel Experto o límite freemium
+      const premiumUsers = JSON.parse(localStorage.getItem('premium_users') || '[]');
+      const isPremium = premiumUsers.includes(username.toLowerCase());
+
+      if (level === 'experto' && !isPremium) {
+        alert('El nivel Experto es exclusivo para cuentas Premium.');
+        openPaywallModal();
+        return;
+      }
+
+      if (!checkAndUseCredit()) return;
 
       document.getElementById('home-section').classList.add('hidden');
       document.getElementById('loading-section').classList.remove('hidden');
-      document.getElementById('loading-text').innerText = 'Generando preguntas y contenidos de apoyo...';
+      document.getElementById('loading-text').innerText = 'Generando preguntas de alta calidad...';
 
       try {
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ topic, userIdentifier: username, selectedLevel: level })
         });
 
         const result = await response.json();
@@ -226,34 +252,55 @@
       const container = document.getElementById('question-container');
       
       document.getElementById('quiz-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${currentQuizData.preguntas.length}`;
-      document.getElementById('feedback-container').classList.add('hidden');
       
+      const prevBtn = document.getElementById('prev-btn');
+      if (currentQuestionIndex === 0) prevBtn.classList.add('hidden');
+      else prevBtn.classList.remove('hidden');
+
       const nextBtn = document.getElementById('next-btn');
-      nextBtn.innerText = currentQuestionIndex === currentQuizData.preguntas.length - 1 ? 'Finalizar Evaluación' : 'Siguiente Pregunta';
+      nextBtn.innerText = currentQuestionIndex === currentQuizData.preguntas.length - 1 ? 'Finalizar Evaluación' : 'Siguiente';
 
       let html = `<p class="text-sm font-bold text-white leading-relaxed">${currentQuestionIndex + 1}. ${q.pregunta}</p><div class="space-y-2.5 mt-4">`;
 
+      const previousSelection = userAnswers[currentQuestionIndex];
+
       q.opciones.forEach((opt, idx) => {
+        const isChecked = previousSelection === idx ? 'checked' : '';
+        const isSelectedClass = previousSelection === idx ? 'border-indigo-500 bg-indigo-950/40' : 'border-slate-800';
+        
         html += `
-          <label class="block bg-slate-950/60 border border-slate-800 hover:border-indigo-500/60 rounded-xl p-3.5 text-sm cursor-pointer transition shadow-sm hover:shadow-indigo-500/5 group">
-            <input type="radio" name="current-option" value="${idx}" class="mr-3 accent-indigo-500" onclick="submitAnswer(${idx})">
+          <label class="block bg-slate-950/60 border ${isSelectedClass} hover:border-indigo-500/60 rounded-xl p-3.5 text-sm cursor-pointer transition shadow-sm group">
+            <input type="radio" name="current-option" value="${idx}" ${isChecked} class="mr-3 accent-indigo-500" onclick="submitAnswer(${idx})">
             <span class="text-slate-200 group-hover:text-white transition">${opt}</span>
           </label>`;
       });
 
       html += `</div>`;
       container.innerHTML = html;
+
+      const feedback = document.getElementById('feedback-container');
+      if (previousSelection !== undefined) {
+        showFeedback(previousSelection, q);
+      } else {
+        feedback.classList.add('hidden');
+      }
     }
 
     function submitAnswer(selectedIdx) {
       const q = currentQuizData.preguntas[currentQuestionIndex];
+      userAnswers[currentQuestionIndex] = selectedIdx;
+      showFeedback(selectedIdx, q);
+    }
+
+    function showFeedback(selectedIdx, q) {
       const isCorrect = selectedIdx === q.respuestaCorrecta;
       
-      userAnswers[currentQuestionIndex] = selectedIdx;
-      answerResults.push({ pregunta: q.pregunta, acerto: isCorrect, seleccionada: q.opciones[selectedIdx], correcta: q.opciones[q.respuestaCorrecta] });
-
-      const radios = document.querySelectorAll('input[name="current-option"]');
-      radios.forEach(r => r.disabled = true);
+      answerResults[currentQuestionIndex] = { 
+        pregunta: q.pregunta, 
+        acerto: isCorrect, 
+        seleccionada: q.opciones[selectedIdx], 
+        correcta: q.opciones[q.respuestaCorrecta] 
+      };
 
       const feedback = document.getElementById('feedback-container');
       feedback.classList.remove('hidden');
@@ -267,6 +314,13 @@
         <p class="mb-2 text-slate-300 leading-relaxed"><strong>Explicación:</strong> ${q.explicacion}</p>
         <p class="text-cyan-300 text-xs mt-3 pt-3 border-t border-slate-800/80 leading-relaxed"><strong>Ampliación de conocimiento:</strong> ${q.ampliacionConocimiento}</p>
       `;
+    }
+
+    function prevQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      }
     }
 
     function nextQuestion() {
@@ -287,7 +341,8 @@
       document.getElementById('quiz-section').classList.add('hidden');
       document.getElementById('results-section').classList.remove('hidden');
 
-      const correctCount = answerResults.filter(r => r.acerto).length;
+      const validResults = answerResults.filter(r => r !== undefined);
+      const correctCount = validResults.filter(r => r.acerto).length;
       const total = currentQuizData.preguntas.length;
       const percentage = (correctCount / total) * 100;
 
@@ -295,52 +350,10 @@
       document.getElementById('score-message').innerText = percentage >= 70 ? '¡Excelente nivel de dominio alcanzado!' : 'Sigue repasando para afianzar los conceptos clave.';
 
       let statsHtml = `<p class="text-indigo-300 font-bold mb-2">Detalle de respuestas:</p>`;
-      answerResults.forEach((res, i) => {
+      validResults.forEach((res, i) => {
         statsHtml += `<p class="${res.acerto ? 'text-emerald-400' : 'text-rose-400'} flex items-center gap-2"><span>${res.acerto ? '✓' : '✕'}</span> Pregunta ${i+1}: ${res.acerto ? 'Correcta' : 'Fallida'}</p>`;
       });
       document.getElementById('user-stats').innerHTML = statsHtml;
-    }
-
-    async function loadUserQuizzes() {
-      const username = document.getElementById('username').value.trim();
-      if (!username) {
-        alert('Escribe tu nombre o identificador primero para consultar tu historial.');
-        return;
-      }
-
-      document.getElementById('home-section').classList.add('hidden');
-      document.getElementById('loading-section').classList.remove('hidden');
-      document.getElementById('loading-text').innerText = 'Cuestionarios guardados...';
-
-      try {
-        const response = await fetch(`/.netlify/functions/generate-quiz?user=${encodeURIComponent(username)}`, { method: 'GET' });
-        const result = await response.json();
-        
-        document.getElementById('loading-section').classList.add('hidden');
-        document.getElementById('history-section').classList.remove('hidden');
-
-        const listContainer = document.getElementById('quizzes-list');
-        if (!result.quizzes || result.quizzes.length === 0) {
-          listContainer.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">No se encontraron cuestionarios registrados.</p>';
-          return;
-        }
-
-        let html = '';
-        result.quizzes.forEach((item) => {
-          html += `
-            <div class="bg-slate-950/60 border border-slate-800 p-3.5 rounded-2xl flex justify-between items-center text-sm shadow-sm">
-              <div>
-                <p class="font-extrabold text-indigo-300 capitalize">Nivel: ${item.quiz.nivel}</p>
-                <p class="text-[11px] text-slate-400">Creado: ${new Date(item.createdAt).toLocaleString()}</p>
-              </div>
-              <button onclick='startQuiz(${JSON.stringify(item.quiz)})' class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20">Iniciar</button>
-            </div>`;
-        });
-        listContainer.innerHTML = html;
-      } catch (err) {
-        alert('Error al cargar historial: ' + err.message);
-        goHome();
-      }
     }
   </script>
 
