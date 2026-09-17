@@ -3,8 +3,22 @@ const fetch = require('node-fetch');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'; // Valor por defecto si olvidas configurarla en Netlify
 
 exports.handler = async function(event, context) {
+  // Verificar contraseña de administrador
+  if (event.httpMethod === 'PUT') {
+    try {
+      const data = JSON.parse(event.body);
+      if (data.password === ADMIN_PASSWORD) {
+        return { statusCode: 200, body: JSON.stringify({ success: true }) };
+      }
+      return { statusCode: 401, body: JSON.stringify({ success: false, error: 'Contraseña incorrecta' }) };
+    } catch (err) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'Solicitud inválida' }) };
+    }
+  }
+
   // Panel de administración: consultar acciones en columnas
   if (event.httpMethod === 'GET') {
     try {
@@ -28,7 +42,6 @@ exports.handler = async function(event, context) {
         }
       }
 
-      // Ordenar por fecha descendiente
       logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       return { statusCode: 200, body: JSON.stringify({ logs }) };
@@ -74,10 +87,8 @@ exports.handler = async function(event, context) {
       ]
     }`;
 
-    // Lógica de 3 reintentos automáticos
     let response = null;
     let attempts = 3;
-    let lastError = null;
 
     for (let i = 0; i < attempts; i++) {
       try {
@@ -89,11 +100,10 @@ exports.handler = async function(event, context) {
             temperature: 0.7
           }
         });
-        break; // Si tiene éxito, sale del ciclo
+        break;
       } catch (err) {
-        lastError = err;
         console.warn(`Intento ${i + 1} falló. Reintentando...`);
-        await new Promise(res => setTimeout(res, 1500)); // Espera 1.5s entre reintentos
+        await new Promise(res => setTimeout(res, 1500));
       }
     }
 
@@ -106,7 +116,6 @@ exports.handler = async function(event, context) {
 
     const quizData = JSON.parse(response.text);
 
-    // Registrar acción en JSONBin para el panel de administración
     try {
       await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
