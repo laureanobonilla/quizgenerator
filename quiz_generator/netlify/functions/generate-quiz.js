@@ -3,10 +3,10 @@ const fetch = require('node-fetch');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'; // Valor por defecto si olvidas configurarla en Netlify
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 exports.handler = async function(event, context) {
-  // Verificar contraseña de administrador
+  // Verificar contraseña de administrador o validarla como llave maestra
   if (event.httpMethod === 'PUT') {
     try {
       const data = JSON.parse(event.body);
