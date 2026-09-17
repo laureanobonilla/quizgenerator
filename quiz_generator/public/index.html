@@ -20,7 +20,7 @@
       <div class="space-y-4 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tu Nombre</label>
-          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+          <input type="text" id="username" placeholder="Ej: Laureano" oninput="checkAdminShortcut()" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
         </div>
 
         <div>
@@ -158,6 +158,17 @@
       return deviceId;
     }
 
+    // Si escribes la contraseña de admin en el campo de tu nombre, te activa el VIP ilimitado automáticamente
+    async function checkAdminShortcut() {
+      const val = document.getElementById('username').value.trim();
+      // Opcional: puedes definir una palabra clave local o verificar mediante la API
+      // Aquí activaremos el VIP si el nombre coincide con la clave maestra 'PREMIUM-2026' o similar
+      if (val === 'PREMIUM-2026') {
+        localStorage.setItem('is_device_premium', 'true');
+        updateCreditsDisplay();
+      }
+    }
+
     function checkAndUseCredit() {
       const isPremium = localStorage.getItem('is_device_premium') === 'true';
       if (isPremium) return true;
@@ -214,22 +225,29 @@
     }
 
     async function openAdminPanel() {
-      const code = prompt('Contraseña de administrador:');
-      // Contraseña sencilla para el admin (puedes cambiarla aquí mismo)
-      if (code !== 'admin123') {
-        if (code !== null) alert('Contraseña incorrecta');
-        return;
-      }
-
-      document.getElementById('home-section').classList.add('hidden');
-      document.getElementById('admin-section').classList.remove('hidden');
-
-      const tbody = document.getElementById('admin-logs-body');
-      tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Cargando registros...</td></tr>`;
+      const password = prompt('Contraseña de administrador:');
+      if (!password) return;
 
       try {
-        const response = await fetch('/.netlify/functions/generate-quiz', { method: 'GET' });
-        const result = await response.json();
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        if (!response.ok) {
+          alert('Contraseña incorrecta');
+          return;
+        }
+
+        document.getElementById('home-section').classList.add('hidden');
+        document.getElementById('admin-section').classList.remove('hidden');
+
+        const tbody = document.getElementById('admin-logs-body');
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Cargando registros...</td></tr>`;
+
+        const logsRes = await fetch('/.netlify/functions/generate-quiz', { method: 'GET' });
+        const result = await logsRes.json();
 
         if (!result.logs || result.logs.length === 0) {
           tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No hay registros aún.</td></tr>`;
@@ -248,8 +266,9 @@
             </tr>`;
         });
         tbody.innerHTML = html;
+
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-rose-400">Error al cargar registros.</td></tr>`;
+        alert('Error al conectar con el servidor.');
       }
     }
 
