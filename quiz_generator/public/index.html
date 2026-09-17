@@ -158,15 +158,23 @@
       return deviceId;
     }
 
-    // Si escribes la contraseña de admin en el campo de tu nombre, te activa el VIP ilimitado automáticamente
+    // Al escribir en el nombre, verifica si es la contraseña de admin para dar acceso VIP automático
     async function checkAdminShortcut() {
-      const val = document.getElementById('username').value.trim();
-      // Opcional: puedes definir una palabra clave local o verificar mediante la API
-      // Aquí activaremos el VIP si el nombre coincide con la clave maestra 'PREMIUM-2026' o similar
-      if (val === 'PREMIUM-2026') {
-        localStorage.setItem('is_device_premium', 'true');
-        updateCreditsDisplay();
-      }
+      const password = document.getElementById('username').value.trim();
+      if (!password) return;
+
+      try {
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        if (response.ok) {
+          localStorage.setItem('is_device_premium', 'true');
+          updateCreditsDisplay();
+        }
+      } catch (err) {}
     }
 
     function checkAndUseCredit() {
