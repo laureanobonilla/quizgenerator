@@ -16,6 +16,14 @@
         <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">Centro de Evaluaciones</h1>
         <p class="text-slate-400 text-sm">Domina cualquier tema mediante micro-aprendizajes interactivos</p>
       </div>
+
+      <!-- BOTÓN DE EFECTO WOW / PRUEBA INMEDIATA -->
+      <div class="bg-gradient-to-r from-indigo-600/20 via-purple-600/25 to-cyan-600/20 p-4 rounded-2xl border border-indigo-500/40 text-center space-y-2 shadow-lg">
+        <p class="text-xs font-bold text-indigo-200">🚀 ¿Sin tiempo para pensar un tema?</p>
+        <button onclick="quickSurpriseQuiz()" class="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-md shadow-indigo-500/20">
+          ✨ Probar Cuestionario Sorpresa de 1 Minuto
+        </button>
+      </div>
       
       <div class="space-y-4 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
         <div>
@@ -36,6 +44,15 @@
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tema a Evaluar</label>
           <input type="text" id="quizTopic" placeholder="Ej: Revolución Francesa, Programación en C#, etc." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+          
+          <!-- CHIPS DE TEMAS EN TENDENCIA (UN SOLO CLIC) -->
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <span class="text-[10px] text-slate-400 self-center mr-1">Populares:</span>
+            <button onclick="setTopic('Inteligencia Artificial y Futuro')" class="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-indigo-300 px-2.5 py-1 rounded-lg transition">🤖 Inteligencia Artificial</button>
+            <button onclick="setTopic('Misterios del Cosmos y Física Cuántica')" class="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-indigo-300 px-2.5 py-1 rounded-lg transition">🌌 Cosmos</button>
+            <button onclick="setTopic('Psicología Humana y Sesgos Cognitivos')" class="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-indigo-300 px-2.5 py-1 rounded-lg transition">🧠 Psicología</button>
+            <button onclick="setTopic('Historia del Imperio Romano')" class="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-indigo-300 px-2.5 py-1 rounded-lg transition">🏛️ Roma</button>
+          </div>
         </div>
 
         <button onclick="generateQuiz()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/25 mt-2">Generar Cuestionario</button>
@@ -149,6 +166,30 @@
     let userAnswers = {};
     let answerResults = [];
 
+    function setTopic(topicText) {
+      document.getElementById('quizTopic').value = topicText;
+    }
+
+    function quickSurpriseQuiz() {
+      const surpriseTopics = [
+        "Misterios y Leyendas del Antiguo Egipto",
+        "Paradojas Físicas y del Tiempo",
+        "Curiosidades Extremas del Cuerpo Humano",
+        "Los Mayores Descubrimientos de la Ciencia",
+        "Filosofía de la Felicidad y Estoicismo"
+      ];
+      const randomTopic = surpriseTopics[Math.floor(Math.random() * surpriseTopics.length)];
+      document.getElementById('quizTopic').value = randomTopic;
+      
+      // Si no puso nombre, asignar uno temporal anónimo
+      const usernameInput = document.getElementById('username');
+      if (!usernameInput.value.trim()) {
+        usernameInput.value = 'Explorador Anónimo';
+      }
+
+      generateQuiz();
+    }
+
     function getDeviceId() {
       let deviceId = localStorage.getItem('app_device_id');
       if (!deviceId) {
@@ -158,7 +199,6 @@
       return deviceId;
     }
 
-    // Al escribir en el nombre, verifica si es la contraseña de admin para dar acceso VIP automático
     async function checkAdminShortcut() {
       const password = document.getElementById('username').value.trim();
       if (!password) return;
@@ -293,16 +333,12 @@
     }
 
     async function generateQuiz() {
-      const username = document.getElementById('username').value.trim();
+      const username = document.getElementById('username').value.trim() || 'Anónimo';
       const level = document.getElementById('quizLevel').value;
       const topic = document.getElementById('quizTopic').value.trim();
 
-      if (!username) {
-        alert('Por favor ingresa tu nombre.');
-        return;
-      }
       if (!topic) {
-        alert('Por favor escribe un tema.');
+        alert('Por favor escribe o selecciona un tema.');
         return;
       }
 
