@@ -27,8 +27,8 @@
       
       <div class="space-y-4 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tu Nombre</label>
-          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tu Nombre o Llave Maestra</label>
+          <input type="text" id="username" placeholder="Ej: Laureano o pega tu llave aquí" oninput="checkGiftKeyShortcut()" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
         </div>
 
         <div>
@@ -71,14 +71,14 @@
         <button onclick="goHome()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">Volver</button>
       </div>
 
-      <!-- Generador de Códigos Únicos -->
+      <!-- Generador de Llaves de Regalo -->
       <div class="bg-indigo-950/40 p-4 rounded-2xl border border-indigo-500/30 space-y-3">
-        <p class="text-xs font-bold text-indigo-200">🔑 Generar Código Único para Comprador:</p>
+        <p class="text-xs font-bold text-indigo-200">🎁 Crear Llave Maestra de Regalo:</p>
         <div class="flex gap-2">
-          <input type="text" id="client-note" placeholder="Nota (Ej: Juan Perez - PayPal)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white">
-          <button onclick="generateNewToken()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-bold whitespace-nowrap">Crear Código</button>
+          <input type="text" id="gift-note" placeholder="Nota (Ej: Amigo Juan)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white">
+          <button onclick="generateGiftKey()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-bold whitespace-nowrap">Crear Llave</button>
         </div>
-        <div id="new-token-result" class="text-xs font-mono text-cyan-300 hidden"></div>
+        <div id="new-gift-result" class="text-xs font-mono text-cyan-300 hidden"></div>
       </div>
 
       <p class="text-xs text-slate-400">Historial y registros de actividad:</p>
@@ -102,21 +102,12 @@
       <div class="bg-slate-900 border border-indigo-500/40 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl text-center">
         <h3 class="text-xl font-bold text-white">Acceso Premium Ilimitado</h3>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Has alcanzado el límite de evaluaciones gratuitas de hoy. Obtén evaluaciones ilimitadas y desbloquea el nivel <strong>Experto</strong> en este dispositivo.
+          Has alcanzado el límite de evaluaciones gratuitas de hoy. Realiza tu pago único y obtén acceso ilimitado inmediato <strong>en este dispositivo</strong> junto al nivel <strong>Experto</strong>.
         </p>
         
         <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
-          <p class="text-xs text-indigo-300 font-semibold">Paso 1: Realiza tu pago</p>
-          <a href="https://www.paypal.com/ncp/payment/YXHVC2M8LAKF4" target="_blank" class="block w-full bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold py-3 rounded-xl text-sm transition shadow-lg">Pagar</a>
-        </div>
-
-        <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-left">
-          <label class="block text-xs text-slate-300 font-semibold">Paso 2: Ingresa tu Código de Activación</label>
-          <p class="text-[10px] text-slate-400">Recibirás tu código tras verificar el pago.</p>
-          <div class="flex gap-2">
-            <input type="text" id="activation-token" placeholder="Ej: PREM-A1B2C3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white uppercase">
-            <button onclick="activatePremium()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold">Activar</button>
-          </div>
+          <a href="https://www.paypal.com/ncp/payment/YXHVC2M8LAKF4" target="_blank" class="block w-full bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg">Pagar con PayPal</a>
+          <p class="text-[10px] text-slate-400">Al completar el pago, regresarás aquí y la app se desbloqueará sola.</p>
         </div>
 
         <button onclick="closePaywallModal()" class="text-xs text-slate-400 hover:text-white underline">Cerrar</button>
@@ -206,6 +197,27 @@
       return deviceId;
     }
 
+    async function checkGiftKeyShortcut() {
+      const inputVal = document.getElementById('username').value.trim();
+      if (inputVal.length < 5) return;
+
+      const deviceId = getDeviceId();
+      try {
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'redeemGiftKey', giftKey: inputVal, deviceId })
+        });
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          localStorage.setItem('is_device_premium', 'true');
+          updateCreditsDisplay();
+          alert('🎁 ¡Llave maestra de regalo aplicada! Disfruta de acceso ilimitado en este dispositivo.');
+        }
+      } catch (e) {}
+    }
+
     function checkAndUseCredit() {
       const isPremium = localStorage.getItem('is_device_premium') === 'true';
       if (isPremium) return true;
@@ -247,55 +259,22 @@
       document.getElementById('paywall-modal').classList.add('hidden');
     }
 
-    // Canje de código único validado por el servidor vinculado al dispositivo
-    async function activatePremium() {
-      const token = document.getElementById('activation-token').value.trim().toUpperCase();
-      const deviceId = getDeviceId();
-
-      if (!token) {
-        alert('Ingresa tu código de activación.');
-        return;
-      }
-
-      try {
-        const response = await fetch('/.netlify/functions/generate-quiz', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'redeemToken', token, deviceId })
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          localStorage.setItem('is_device_premium', 'true');
-          alert('¡Dispositivo activado con éxito! Acceso ilimitado desbloqueado.');
-          closePaywallModal();
-          updateCreditsDisplay();
-        } else {
-          alert(result.error || 'Código de activación inválido o ya utilizado.');
-        }
-      } catch (err) {
-        alert('Error al validar el código con el servidor.');
-      }
-    }
-
-    // Generar nuevo código único desde el panel de admin
-    async function generateNewToken() {
-      const note = document.getElementById('client-note').value.trim();
-      const resContainer = document.getElementById('new-token-result');
+    async function generateGiftKey() {
+      const note = document.getElementById('gift-note').value.trim();
+      const resContainer = document.getElementById('new-gift-result');
       
       try {
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ createToken: true, note })
+          body: JSON.stringify({ createGiftKey: true, note })
         });
         const result = await response.json();
-        if (response.ok && result.token) {
+        if (response.ok && result.key) {
           resContainer.classList.remove('hidden');
-          resContainer.innerText = `Código generado: ${result.token} (Cópialo y envíalo al cliente)`;
+          resContainer.innerText = `Llave generada: ${result.key} (Cópialo y envíalo a tu amigo)`;
         } else {
-          alert('Error al generar código');
+          alert('Error al generar llave');
         }
       } catch (e) {
         alert('Error de red');
@@ -341,11 +320,11 @@
                 <td class="p-3 text-slate-400">${new Date(log.createdAt).toLocaleString()}</td>
                 <td class="p-3">Evaluación - <span class="text-indigo-300 font-semibold">${l.user}</span> (${l.nivel}): ${l.tema}</td>
               </tr>`;
-          } else if (log.premiumToken) {
+          } else if (log.giftKey) {
             html += `
               <tr class="hover:bg-slate-900/50 bg-indigo-950/20">
                 <td class="p-3 text-slate-400">${new Date(log.createdAt).toLocaleString()}</td>
-                <td class="p-3">Token Creado: <strong class="text-cyan-300">${log.premiumToken}</strong> (${log.note}) ${log.usedByDevice ? '✓ Usado' : '⏳ Libre'}</td>
+                <td class="p-3">Llave Regalo: <strong class="text-cyan-300">${log.giftKey}</strong> (${log.note}) ${log.usedByDevice ? '✓ Canjeada' : '⏳ Disponible'}</td>
               </tr>`;
           }
         });
@@ -530,7 +509,14 @@
       document.getElementById('user-stats').innerHTML = statsHtml;
     }
 
+    // Escucha automática del retorno de PayPal (?success=true)
     window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success') === 'true') {
+        localStorage.setItem('is_device_premium', 'true');
+        alert('¡Pago completado con éxito! Tu dispositivo ha sido actualizado a Premium de por vida ⭐');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       updateCreditsDisplay();
     };
   </script>
