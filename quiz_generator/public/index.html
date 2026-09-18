@@ -28,7 +28,7 @@
       <div class="space-y-4 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 shadow-inner">
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tu Nombre</label>
-          <input type="text" id="username" placeholder="Ej: Laureano" oninput="checkAdminShortcut()" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
+          <input type="text" id="username" placeholder="Ej: Laureano" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
         </div>
 
         <div>
@@ -45,7 +45,6 @@
           <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-300">Tema a Evaluar</label>
           <input type="text" id="quizTopic" placeholder="Ej: Revolución Francesa, Programación en C#, etc." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition">
           
-          <!-- CHIPS DE TEMAS EN TENDENCIA (UN SOLO CLIC) -->
           <div class="mt-3 flex flex-wrap gap-1.5">
             <span class="text-[10px] text-slate-400 self-center mr-1">Populares:</span>
             <button onclick="setTopic('Inteligencia Artificial y Futuro')" class="text-[10px] bg-slate-900 hover:bg-slate-800 border border-slate-800 text-indigo-300 px-2.5 py-1 rounded-lg transition">🤖 Inteligencia Artificial</button>
@@ -65,25 +64,34 @@
       </div>
     </div>
 
-    <!-- PANEL DE ADMINISTRACIÓN (OCULTO) -->
+    <!-- PANEL DE ADMINISTRACIÓN -->
     <div id="admin-section" class="hidden space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <h2 class="text-lg font-bold text-indigo-400">Panel de Administración</h2>
         <button onclick="goHome()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">Volver</button>
       </div>
-      <p class="text-xs text-slate-400">Historial en columnas de las acciones de los usuarios:</p>
-      <div class="overflow-x-auto max-h-96 border border-slate-800 rounded-xl bg-slate-950/80">
+
+      <!-- Generador de Códigos Únicos -->
+      <div class="bg-indigo-950/40 p-4 rounded-2xl border border-indigo-500/30 space-y-3">
+        <p class="text-xs font-bold text-indigo-200">🔑 Generar Código Único para Comprador:</p>
+        <div class="flex gap-2">
+          <input type="text" id="client-note" placeholder="Nota (Ej: Juan Perez - PayPal)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white">
+          <button onclick="generateNewToken()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-bold whitespace-nowrap">Crear Código</button>
+        </div>
+        <div id="new-token-result" class="text-xs font-mono text-cyan-300 hidden"></div>
+      </div>
+
+      <p class="text-xs text-slate-400">Historial y registros de actividad:</p>
+      <div class="overflow-x-auto max-h-72 border border-slate-800 rounded-xl bg-slate-950/80">
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-900 text-indigo-300 border-b border-slate-800">
             <tr>
               <th class="p-3">Fecha / Hora</th>
-              <th class="p-3">Usuario</th>
-              <th class="p-3">Nivel</th>
-              <th class="p-3">Tema Evaluado</th>
+              <th class="p-3">Detalle / Acción</th>
             </tr>
           </thead>
           <tbody id="admin-logs-body" class="divide-y divide-slate-800 text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Cargando registros...</td></tr>
+            <tr><td colspan="2" class="p-4 text-center text-slate-500">Cargando registros...</td></tr>
           </tbody>
         </table>
       </div>
@@ -94,7 +102,7 @@
       <div class="bg-slate-900 border border-indigo-500/40 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl text-center">
         <h3 class="text-xl font-bold text-white">Acceso Premium Ilimitado</h3>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Has alcanzado el límite de evaluaciones gratuitas de hoy. Obtén evaluaciones ilimitadas y desbloquea el nivel <strong>Experto</strong> de forma permanente <strong>en este dispositivo</strong>.
+          Has alcanzado el límite de evaluaciones gratuitas de hoy. Obtén evaluaciones ilimitadas y desbloquea el nivel <strong>Experto</strong> en este dispositivo.
         </p>
         
         <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
@@ -104,9 +112,9 @@
 
         <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-left">
           <label class="block text-xs text-slate-300 font-semibold">Paso 2: Ingresa tu Código de Activación</label>
-          <p class="text-[10px] text-slate-400">Te enviaremos el código tras verificar el pago en PayPal.</p>
+          <p class="text-[10px] text-slate-400">Recibirás tu código tras verificar el pago.</p>
           <div class="flex gap-2">
-            <input type="text" id="activation-token" placeholder="Ej: PREMIUM-2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white uppercase">
+            <input type="text" id="activation-token" placeholder="Ej: PREM-A1B2C3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 text-xs text-white uppercase">
             <button onclick="activatePremium()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-xl font-bold">Activar</button>
           </div>
         </div>
@@ -181,7 +189,6 @@
       const randomTopic = surpriseTopics[Math.floor(Math.random() * surpriseTopics.length)];
       document.getElementById('quizTopic').value = randomTopic;
       
-      // Si no puso nombre, asignar uno temporal anónimo
       const usernameInput = document.getElementById('username');
       if (!usernameInput.value.trim()) {
         usernameInput.value = 'Explorador Anónimo';
@@ -197,24 +204,6 @@
         localStorage.setItem('app_device_id', deviceId);
       }
       return deviceId;
-    }
-
-    async function checkAdminShortcut() {
-      const password = document.getElementById('username').value.trim();
-      if (!password) return;
-
-      try {
-        const response = await fetch('/.netlify/functions/generate-quiz', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-
-        if (response.ok) {
-          localStorage.setItem('is_device_premium', 'true');
-          updateCreditsDisplay();
-        }
-      } catch (err) {}
     }
 
     function checkAndUseCredit() {
@@ -258,17 +247,58 @@
       document.getElementById('paywall-modal').classList.add('hidden');
     }
 
-    function activatePremium() {
+    // Canje de código único validado por el servidor vinculado al dispositivo
+    async function activatePremium() {
       const token = document.getElementById('activation-token').value.trim().toUpperCase();
-      const SECRET_MASTER_TOKEN = 'PREMIUM-2026'; 
+      const deviceId = getDeviceId();
 
-      if (token === SECRET_MASTER_TOKEN) {
-        localStorage.setItem('is_device_premium', 'true');
-        alert('¡Dispositivo activado con éxito! Acceso ilimitado desbloqueado.');
-        closePaywallModal();
-        updateCreditsDisplay();
-      } else {
-        alert('Código de activación inválido.');
+      if (!token) {
+        alert('Ingresa tu código de activación.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'redeemToken', token, deviceId })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          localStorage.setItem('is_device_premium', 'true');
+          alert('¡Dispositivo activado con éxito! Acceso ilimitado desbloqueado.');
+          closePaywallModal();
+          updateCreditsDisplay();
+        } else {
+          alert(result.error || 'Código de activación inválido o ya utilizado.');
+        }
+      } catch (err) {
+        alert('Error al validar el código con el servidor.');
+      }
+    }
+
+    // Generar nuevo código único desde el panel de admin
+    async function generateNewToken() {
+      const note = document.getElementById('client-note').value.trim();
+      const resContainer = document.getElementById('new-token-result');
+      
+      try {
+        const response = await fetch('/.netlify/functions/generate-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ createToken: true, note })
+        });
+        const result = await response.json();
+        if (response.ok && result.token) {
+          resContainer.classList.remove('hidden');
+          resContainer.innerText = `Código generado: ${result.token} (Cópialo y envíalo al cliente)`;
+        } else {
+          alert('Error al generar código');
+        }
+      } catch (e) {
+        alert('Error de red');
       }
     }
 
@@ -280,7 +310,7 @@
         const response = await fetch('/.netlify/functions/generate-quiz', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
+          body: JSON.stringify({ action: 'verifyAdmin', password })
         });
 
         if (!response.ok) {
@@ -292,26 +322,32 @@
         document.getElementById('admin-section').classList.remove('hidden');
 
         const tbody = document.getElementById('admin-logs-body');
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Cargando registros...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-400">Cargando registros...</td></tr>`;
 
         const logsRes = await fetch('/.netlify/functions/generate-quiz', { method: 'GET' });
         const result = await logsRes.json();
 
         if (!result.logs || result.logs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No hay registros aún.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">No hay registros aún.</td></tr>`;
           return;
         }
 
         let html = '';
         result.logs.forEach(log => {
-          const l = log.actionLog;
-          html += `
-            <tr class="hover:bg-slate-900/50">
-              <td class="p-3 text-slate-400">${new Date(log.createdAt).toLocaleString()}</td>
-              <td class="p-3 font-semibold text-indigo-300">${l.user}</td>
-              <td class="p-3 capitalize">${l.nivel}</td>
-              <td class="p-3 font-medium text-white">${l.tema}</td>
-            </tr>`;
+          if (log.actionLog) {
+            const l = log.actionLog;
+            html += `
+              <tr class="hover:bg-slate-900/50">
+                <td class="p-3 text-slate-400">${new Date(log.createdAt).toLocaleString()}</td>
+                <td class="p-3">Evaluación - <span class="text-indigo-300 font-semibold">${l.user}</span> (${l.nivel}): ${l.tema}</td>
+              </tr>`;
+          } else if (log.premiumToken) {
+            html += `
+              <tr class="hover:bg-slate-900/50 bg-indigo-950/20">
+                <td class="p-3 text-slate-400">${new Date(log.createdAt).toLocaleString()}</td>
+                <td class="p-3">Token Creado: <strong class="text-cyan-300">${log.premiumToken}</strong> (${log.note}) ${log.usedByDevice ? '✓ Usado' : '⏳ Libre'}</td>
+              </tr>`;
+          }
         });
         tbody.innerHTML = html;
 
