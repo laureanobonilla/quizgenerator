@@ -5,20 +5,13 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const JSONBIN_MASTER_KEY = process.env.JSONBIN_MASTER_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
-// Helper para buscar o crear un Bin maestro de control de códigos Premium en JSONBin
-async function getCodesBin() {
-  // Nota: Para simplificar el MVP, guardamos los códigos autorizados en el historial o en un registro especial de JSONBin
-  // Aquí gestionaremos la validación consultando los registros existentes.
-  return true;
-}
-
 exports.handler = async function(event, context) {
-  // 1. Verificar contraseña de administrador
+  // Manejo de peticiones PUT (Admin o Canje de Llave Maestra / Regalo)
   if (event.httpMethod === 'PUT') {
     try {
       const data = JSON.parse(event.body);
       
-      // Validar Accion de Activar Token por parte del Admin o Verificación de Admin
+      // 1. Verificación de contraseña de administrador para abrir el panel
       if (data.action === 'verifyAdmin') {
         if (data.password === ADMIN_PASSWORD) {
           return { statusCode: 200, body: JSON.stringify({ success: true }) };
@@ -26,20 +19,22 @@ exports.handler = async function(event, context) {
         return { statusCode: 401, body: JSON.stringify({ success: false, error: 'Contraseña incorrecta' }) };
       }
 
-      // Validar y Canjear Código Único Premium para un Dispositivo
-      if (data.action === 'redeemToken') {
-        const { token, deviceId } = data;
-        if (!token || !deviceId) {
+      // 2. Canjear Llave Maestra / Regalo en el campo de nombre
+      if (data.action === 'redeemGiftKey') {
+        const { giftKey, deviceId } = data;
+        if (!giftKey || !deviceId) {
           return { statusCode: 400, body: JSON.stringify({ error: 'Datos incompletos' }) };
         }
 
-        // Consultar los registros en JSONBin para buscar el token
+        const cleanKey = giftKey.trim().toUpperCase();
+
+        // Buscar en JSONBin si existe la llave de regalo
         const res = await fetch('https://api.jsonbin.io/v3/b', {
           headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
         });
         const bins = await res.json();
         
-        let tokenFound = false;
+        let keyFound = false;
         let alreadyUsedByOther = false;
 
         if (Array.isArray(bins)) {
@@ -50,13 +45,12 @@ exports.handler = async function(event, context) {
               });
               const detail = await detailRes.json();
               
-              // Si encontramos un registro del token
-              if (detail.record && detail.record.premiumToken && detail.record.premiumToken === token.toUpperCase()) {
-                tokenFound = true;
+              if (detail.record && detail.record.giftKey && detail.record.giftKey === cleanKey) {
+                keyFound = true;
                 if (detail.record.usedByDevice && detail.record.usedByDevice !== deviceId) {
                   alreadyUsedByOther = true;
                 } else {
-                  // Si no ha sido usado o ya pertenece a este mismo dispositivo, lo asociamos/actualizamos
+                  // Casar la llave con este dispositivo permanentemente
                   await fetch(`https://api.jsonbin.io/v3/b/${b.record.id || b.id}`, {
                     method: 'PUT',
                     headers: {
@@ -76,14 +70,14 @@ exports.handler = async function(event, context) {
           }
         }
 
-        if (!tokenFound) {
-          return { statusCode: 404, body: JSON.stringify({ success: false, error: 'Código de activación inválido o inexistente.' }) };
+        if (!keyFound) {
+          return { statusCode: 404, body: JSON.stringify({ success: false, error: 'Llave maestra inválida.' }) };
         }
         if (alreadyUsedByOther) {
-          return { statusCode: 400, body: JSON.stringify({ success: false, error: 'Este código ya fue utilizado en otro dispositivo.' }) };
+          return { statusCode: 400, body: JSON.stringify({ success: false, error: 'Esta llave ya fue utilizada en otro dispositivo.' }) };
         }
 
-        return { statusCode: 200, body: JSON.stringify({ success: true, message: '¡Dispositivo activado con éxito!' }) };
+        return { statusCode: 200, body: JSON.stringify({ success: true, message: '¡Llave activada con éxito!' }) };
       }
 
       return { statusCode: 400, body: JSON.stringify({ error: 'Acción no válida' }) };
@@ -92,7 +86,7 @@ exports.handler = async function(event, context) {
     }
   }
 
-  // 2. Panel de administración: consultar acciones y códigos
+  // Panel de administración: consultar logs y llaves creadas
   if (event.httpMethod === 'GET') {
     try {
       const res = await fetch('https://api.jsonbin.io/v3/b', {
@@ -108,7 +102,7 @@ exports.handler = async function(event, context) {
               headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
             });
             const detail = await detailRes.json();
-            if (detail.record && (detail.record.actionLog || detail.record.premiumToken)) {
+            if (detail.record && (detail.record.actionLog || detail.record.giftKey)) {
               logs.push(detail.record);
             }
           } catch (e) {}
@@ -123,7 +117,7 @@ exports.handler = async function(event, context) {
     }
   }
 
-  // 3. POST: Generar Quiz o Crear un Nuevo Token de Activación (Admin)
+  // POST: Generar Quiz o Crear una Nueva Llave de Regalo (Admin)
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -131,24 +125,24 @@ exports.handler = async function(event, context) {
   try {
     const data = JSON.parse(event.body);
 
-    // Si la petición es para crear un código único nuevo (Admin function)
-    if (data.createToken) {
-      const randomCode = 'PREM-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Si la petición es para crear una nueva llave de regalo
+    if (data.createGiftKey) {
+      const customKey = (data.keyName || ('REGALO-' + Math.random().toString(36).substring(2, 8))).toUpperCase();
       await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Master-Key': JSONBIN_MASTER_KEY,
-          'X-Bin-Name': `Token_${randomCode}`
+          'X-Bin-Name': `GiftKey_${customKey}`
         },
         body: JSON.stringify({
           createdAt: new Date().toISOString(),
-          premiumToken: randomCode,
+          giftKey: customKey,
           usedByDevice: null,
-          note: data.note || 'Cliente PayPal'
+          note: data.note || 'Llave de regalo'
         })
       });
-      return { statusCode: 200, body: JSON.stringify({ success: true, token: randomCode }) };
+      return { statusCode: 200, body: JSON.stringify({ success: true, key: customKey }) };
     }
 
     const { topic, userIdentifier, selectedLevel } = data;
